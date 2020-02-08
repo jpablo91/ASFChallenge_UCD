@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+Data/Island_LANDCOVER.shp
+Data/Island_LANDCOVER.dbf
+Data/Island_LANDCOVER.prj
+Data/Island_LANDCOVER.shx
