@@ -1,10 +1,22 @@
-Hi everyone!  
-  We can use this repo to share the code and materials we will be using for the challenge.  
-  If you want to read more about the challenge here is the [LINK](https://www6.inrae.fr/asfchallenge/). In the next meeting we can talk about some ideas and how are we organizing to work together.  
-  I could not upload one of the files from the mock data (Landcover) the people from the challange provided, you can download the data from the website or using this [LINK](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag) to a Box shared folder. Nistara suggested me to use a sym link but I'm still figuring out how to do that 
+# Repository for sharing code of the ASF Challange.  
+
+Hi all, I am uploading a description of the model, which you can find in [THIS LINK](Code/Model_Explanation.html).  
+The last meeting we talked about what can we do to parametrize our model, one of the things we talked is to use a model that can handle well the zero inflation of our data. There is very few cases compared to the hexagons without cases. We can use the data found in the shared folder *Shapefiles/FarmsHx.shp* to try to find some association between the variables and the number of cases and inform better our simulation model.  
+I put the data in a shared box folder, which everyone should be able to access. There are two shapefiles in the *shapefile* directory:  
   
-  I had a quick look at the data and checked the spatial distribution of the vaiables, you can find it [Here](Code/DataExploration.md).
+  - *FarmsHx.shp* which is the hexagons with farms with the data from all the other data sets agregated.  
+  - *MapHx.shp* Which is the full area with the data aggregated at hexagonal grid.  
+
+The code that explains how I did this can be found under [CreateHx.md](Code/CreateHx.md) file.  
+
+### Code:  
+
+  - [Distribution of the variables](Code/DataExploration.md)  
+  - [Create the Hexagonal grids](Code/CreateHx.md)
+
+
   
-  I created a When is good poll so we can have our next meeting and talk about some initial ideas, you can answer your availability here: [Poll](http://whenisgood.net/2qi5h7s), the results will be shown [Here](http://whenisgood.net/2qi5h7s/results/34d2anj), in case we need to edit the event there is this [LINK](http://whenisgood.net/2qi5h7s/edit/34d2anj).  
-  
-  WIG Code: 34d2anj
+### Some Links:  
+
+  - [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag)  
+  - [ASF Challange website](https://www6.inrae.fr/asfchallenge/)
