@@ -1,5 +1,6 @@
 ---
 title: "Explanation of the model"
+output: github_document
 ---
 
 # Model
