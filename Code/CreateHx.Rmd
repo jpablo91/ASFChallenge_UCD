@@ -156,9 +156,17 @@ demo_hunting <- read.csv("../Data/demo_WB_HuntingBag.csv")
 Is <- Is %>% 
   mutate(ID = as.integer(as.character(ID))) %>%
   left_join(demo_hunting, by = c("ID" = "ADM"))
+
+Is %>%
+  ggplot(aes(fill = HB_2019)) +
+  geom_sf()
+
+MapHex %>%
+  ggplot(aes(fill = Hunted)) +
+  geom_sf()
 ```
 
-Now we will use a function to join the hexagons with the administrative areas based on the amount of overlapping, we will use a treshold of 30%. This means that if there is >30% overlapp the hexagon will joinwith the administrative area.  
+Now we will use a function to join the hexagons with the administrative areas based on the amount of overlapping, we will use a treshold of 30%. This means that if there is >30% overlap the hexagon will join with the administrative area.  
 
 For the hexagons that joins with more than 2 administrative areas, we will get a mean for the value of the hunted boars.
 
@@ -171,11 +179,12 @@ HuntHex <- MapHex %>%
     join = STNet::st_overlaps_with_threshold, threshold = units::set_units(th, m^2)) %>% # Join based on the treshold
   group_by(idhex) %>%
   summarise(Hunted = mean(HB_2019, na.rm = T)) %>% # get the average of those hexagons that join with >1 admin area
-  data.frame() # convert to a dataframe
+  data.frame() # convert to a data frame
 
 # Join with the other data
 MapHex <- MapHex %>%
   left_join(HuntHex, by = "idhex")
+
 ```
 
 
