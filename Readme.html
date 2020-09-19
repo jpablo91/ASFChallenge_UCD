@@ -367,22 +367,18 @@ summary {
 
 <div id="repository-for-sharing-code-of-the-asf-challange." class="section level1">
 <h1>Repository for sharing code of the ASF Challange.</h1>
-<p>Hi all, I am uploading a description of the model, which you can find in <a href="Code/Model_Explanation.md">THIS LINK</a>.<br />
-The last meeting we talked about what can we do to parametrize our model, one of the things we talked is to use a model that can handle well the zero inflation of our data. There is very few cases compared to the hexagons without cases. We can use the data found in the shared folder <em>Shapefiles/FarmsHx.shp</em> to try to find some association between the variables and the number of cases and inform better our simulation model.<br />
-I put the data in a shared box folder, which everyone should be able to access. There are two shapefiles in the <em>shapefile</em> directory:</p>
+<p>Hi all, I updated the repo, there are 3 main files:</p>
 <ul>
-<li><em>FarmsHx.shp</em> which is the hexagons with farms with the data from all the other data sets agregated.<br />
+<li><a href="Code/Period_1.Rmd">Data processing for the period_1</a>: Here I do some processing of the data to obtain te formats required for the model and see some of the distribution of cases.<br />
 </li>
-<li><em>MapHx.shp</em> Which is the full area with the data aggregated at hexagonal grid.</li>
-</ul>
-<p>The code that explains how I did this can be found under <a href="Code/CreateHx.md">CreateHx.md</a> file.</p>
-<div id="code" class="section level3">
-<h3>Code:</h3>
-<ul>
-<li><a href="Code/DataExploration.md">Distribution of the variables</a><br />
+<li><a href="Code/SimsOut.Rmd">Processing of the simulation outputs</a>: In this one I create the figures for the current model.<br />
 </li>
-<li><a href="Code/CreateHx.md">Create the Hexagonal grids</a></li>
+<li><a href="Code/GAMA_ASF/ASF/models/ASF1_2.gamls">Current model</a>: This is the gama code for the model.</li>
 </ul>
+<p>Make sure to put the get the data from the shared box folder and put it in the correct directories if you want to run the code.</p>
+<div id="data" class="section level3">
+<h3>Data:</h3>
+<p>The data original data and the data processed for the model can be found in the shared box folder. The Data provided is on the folders <em>Data/Initialata</em> and <em>Data/Period_1</em>. The processed data needed to run the model can be found on the folder <em>Data/includes</em>.</p>
 </div>
 <div id="some-links" class="section level3">
 <h3>Some Links:</h3>

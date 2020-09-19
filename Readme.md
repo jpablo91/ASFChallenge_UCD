@@ -1,20 +1,17 @@
 # Repository for sharing code of the ASF Challange.  
 
-Hi all, I am uploading a description of the model, which you can find in [THIS LINK](Code/Model_Explanation.md).  
-The last meeting we talked about what can we do to parametrize our model, one of the things we talked is to use a model that can handle well the zero inflation of our data. There is very few cases compared to the hexagons without cases. We can use the data found in the shared folder *Shapefiles/FarmsHx.shp* to try to find some association between the variables and the number of cases and inform better our simulation model.  
-I put the data in a shared box folder, which everyone should be able to access. There are two shapefiles in the *shapefile* directory:  
+Hi all, I updated the repo, there are 3 main files:  
   
-  - *FarmsHx.shp* which is the hexagons with farms with the data from all the other data sets agregated.  
-  - *MapHx.shp* Which is the full area with the data aggregated at hexagonal grid.  
+  - [Data processing for the period_1](Code/Period_1.Rmd): Here I do some processing of the data to obtain te formats required for the model and see some of the distribution of cases.  
+  - [Processing of the simulation outputs](Code/SimsOut.Rmd): In this one I create the figures for the current model.  
+  - [Current model](Code/GAMA_ASF/ASF/models/ASF1_2.gamls): This is the gama code for the model.  
+  
+Make sure to put the get the data from the shared box folder and put it in the correct directories if you want to run the code.  
+  
+### Data:  
 
-The code that explains how I did this can be found under [CreateHx.md](Code/CreateHx.md) file.  
-
-### Code:  
-
-  - [Distribution of the variables](Code/DataExploration.md)  
-  - [Create the Hexagonal grids](Code/CreateHx.md)
-
-
+The data original data and the data processed for the model can be found in the shared box folder. The Data provided is on the folders *Data/Initialata* and *Data/Period_1*.  The processed data needed to run the model can be found on the folder *Data/includes*.  
+  
   
 ### Some Links:  
 
