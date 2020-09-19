@@ -1,0 +1,80 @@
+---
+title: "Simulations Output"
+output: html_notebook
+---
+
+```{r}
+library(dplyr); library(ggplot2); library(ggpubr)
+################## FUNCTIONS ####################
+# Read Simulations
+ReadSims <- function(dir){
+  f <- list.files(dir, full.names = T)
+  
+  L <- lapply(1:length(f), function(x){
+    read.csv(f[x], fileEncoding = 'UTF-8') %>%
+      mutate(Sim = x)
+    }) %>%
+    do.call(rbind, .)
+}
+
+# Functions for getting quantiles
+Q25 <- function(x) quantile(x, 0.25)
+Q75 <- function(x) quantile(x, 0.75)
+
+# Function for summarizing the cycles
+CycleSums <- function(x){
+  x %>%
+    select(-Sim) %>%
+    group_by(cycle) %>%
+    summarise_all(.funs = c(median, Q25, Q75))
+}
+
+# Function for the plots
+PlotCycles <- function(x, var, col){
+  x %>%
+    CycleSums() %>%
+    ggplot(aes(x=cycle)) +
+    geom_line(aes(y=eval(parse(text = paste0(var, '_fn1')))), col = col, lwd = 1) +
+    geom_ribbon(aes(ymin=eval(parse(text = paste0(var, '_fn2'))), ymax=eval(parse(text = paste0(var, '_fn3')))), alpha = 0.3, fill = col) +
+    theme_minimal() + ylab(var) +
+    theme(legend.position = "none") 
+}
+```
+
+
+
+```{r fig.height=3, fig.width=8}
+S0 <- ReadSims(dir = "../Data/Period_1/SimsOut/EC/")
+
+P1 <- PlotCycles(S0, var = "Infected_P", col = "pink2")
+P2 <- PlotCycles(S0, var = "Infected_WB", col = "brown")
+
+ggarrange(P1, P2)
+```
+
+# Create the map 
+```{r}
+Hx_sim <- ReadSims(dir = "../Data/Period_1/SimsOut/Agents/")
+
+Hx_sim <- Hx_sim %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise(Epidemic = sum(Epidemic))
+
+Hx %>%
+  left_join(Hx_sim, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  ggplot() +
+  geom_sf(aes(fill = Epidemic))
+
+Hx %>%
+  left_join(Hx_sim, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  ggplot() +
+  geom_sf(aes(fill = Epidemic)) +
+  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+```
+

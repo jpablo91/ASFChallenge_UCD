@@ -1,0 +1,325 @@
+---
+title: "Period 1"
+---
+
+```{r}
+library(dplyr)
+library(igraph)
+library(tidygraph)
+library(sf)
+library(ggplot2)
+library(sp)
+```
+
+
+# Objectives:  
+  
+  - Predict the expected number and location of outbreaks detected in farms and wild boars in the next four weeks.  
+  - Predict the effectiveness of fencing infected zones.  
+  - Advise regarding implementation of the increased hunting pressure in the fenced area.  
+  
+Deadline: October 8th, 2020.  
+  
+  
+# Data overview:  
+  
+```{r Create hexagonal grid}
+HxRes <- 15e3
+# Read the shapefile
+Is <- sf::read_sf("../Data/InitialData/Island_ADMIN.shp")
+# Convert to a field
+Border <- as(raster::extent(Is), "SpatialPolygons") %>%
+  sf::st_as_sf()
+st_crs(Border) <- st_crs(Is)
+# Create the grid
+BHx <- STNet::HexGrid(cellsize = HxRes, Shp = Border)
+```
+
+  
+## Herds.  
+
+```{r}
+herds50 <- read.csv("../Data/Period_1/herds_day_50.csv")
+######## Summarize herds ########
+herds50 <- herds50 %>%
+  mutate(N=1) %>%
+  tidyr::spread(production, N) %>% # Convert from long to wide for farm types
+  replace(., is.na(.), 0) # Replace NAs with 0
+
+herdsSp <- herds50 %>%
+  sf::st_as_sf(coords = c("X", "Y"), crs = st_crs(Is)) %>%
+  st_join(BHx)
+
+herdsHx <- herdsSp %>%
+  mutate(N = 1) %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('N', 'size', 'is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F'), .funs = sum) %>%
+  mutate(density = size/ N) %>% # expected animals per farm
+  data.frame() %>%
+  select(-geometry) %>%
+  rename(Farms = N, Pop = size)
+
+Hx <- BHx %>%
+  left_join(herdsHx)
+```
+
+
+## Movements
+
+```{r}
+Mov <- read.csv("../Data/Period_1/moves_Players_day_50.csv")
+
+MovHx <- Mov %>%
+  left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('source' = 'population_id')) %>%
+  rename(sourceHx = idhex) %>%
+  left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('dest' = 'population_id')) %>%
+  rename(destHx = idhex) %>%
+  mutate_at(.vars = c('sourceHx', 'destHx'), .funs = as.character)
+
+# How long was the period observed?
+period_t <- MovHx %>%
+  count(date) %>%
+  nrow()
+
+# Get the probability of movements (long distance) and loops (short distance/internals)
+MovpHx <- MovHx %>%
+  mutate(Mov = 1, loop = ifelse(sourceHx == destHx, 1, 0)) %>%
+  group_by(sourceHx) %>%
+  summarise(Mov = sum(Mov, ma.rm = T), loop = sum(loop), E_animals = median(qty)) %>%
+  mutate(Mov = Mov/period_t, loop = loop/period_t)
+
+# join with the herds dataset
+Hx <- Hx %>%
+  left_join(MovpHx, by = c('idhex' = 'sourceHx'))
+
+
+MovHx %>%
+  mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
+  select(ID, sourceHx, destHx) %>%
+  # slice(1:200) %>%
+  write.csv(., "../Data/Period_1/out/MovHx.csv", row.names = F, quote = F)
+
+MovHx %>%
+  filter(sourceHx == 1429)
+```
+
+
+# wild boars
+
+```{r}
+hunting <- read.csv("../Data/InitialData/WB_HuntingBag.csv", sep = ";")
+
+Is <- Is %>% 
+  mutate(ID = as.integer(as.character(ID)), area = st_area(.)) %>%
+  left_join(hunting, by = c("ID" = "ADM")) %>%
+  mutate(WB_dens = HB_2019/area) 
+# Create an empty raster (increaseing the ncol and nrow will give us a better resolution, but will also increase the computation time)
+r <- raster(ncol = 1000, nrow = 1000)
+# Set the extent same as the shapefile
+extent(r) <- extent(Is)
+
+WBr <- fasterize::fasterize(sf = Is, raster = r, field = "WB_dens", fun = "sum")
+
+Vals <- lapply(1:nrow(Hx), function(x){
+  mean(raster::extract(WBr, Hx[x,])[[1]], na.rm = T)
+})
+
+Hx <- Hx %>%
+  mutate(WBd = do.call(rbind, Vals), E_WB = (WBd*HxRes) * 1000)
+
+# Compare plots
+Hx %>%
+  ggplot()+
+  geom_sf(aes(fill = E_WB))
+
+plot(WBr)
+```
+
+# Land cover
+
+```{r}
+LC <- st_read("../Data/Island_LANDCOVER.shp")
+```
+
+
+```{r}
+# Recode the land cover levels to manipulate later
+LC <- LC %>%
+  mutate(LC = recode(LANDCOVER, Agricultural = 1, Forest = 10, Urban = 100))
+```
+
+We will put all the information in a raster so we can then extract and summarize the values per hexagon
+
+```{r}
+library(raster)
+# Use the function fasterize to sum the number of N over each pixel of our raster
+LCr <- fasterize::fasterize(sf = LC, raster = r, field = "LC", fun = "sum")
+# Get the unique values to see if worked
+unique(values(LCr))
+```
+
+Some of the values are not the ones we recoded for (there might be some overlapping of the values due to the resolution used), we can see that the unexpected numbers are just sums of two of the same type, so we will just replace those:
+```{r}
+# Replace NAs for 0s
+LCr[is.na(LCr[])] <- 0
+# Replace overlapping raster cells
+LCr[(LCr[] > 1 & LCr[] < 9)] <- 1
+LCr[(LCr[] > 10 & LCr[] < 90)] <- 10
+LCr[(LCr[] > 100 & LCr[] < 900)] <- 100
+# Plot the raster
+plot(LCr)
+```
+
+
+
+Now we will summarise the values per hexagon
+
+```{r}
+# Create empty vectors
+A_vals <- vector()
+F_vals <- vector()
+U_vals <- vector()
+# Make a loop that will run for each hexagon
+for(i in 1:nrow(Hx)){
+  # Get the values for each haxagon
+  Vals <- raster::extract(LCr, Hx[i,])
+  # get the proportion of each type of land cover
+  AVals_i <- length(Vals[[1]][Vals[[1]] == 1]) / length(Vals[[1]])
+  FVals_i <- length(Vals[[1]][Vals[[1]] == 10]) / length(Vals[[1]])
+  UVals_i <- length(Vals[[1]][Vals[[1]] == 100]) / length(Vals[[1]])
+  # create vectors with the values:
+  A_vals <- c(A_vals, AVals_i)
+  F_vals <- c(F_vals, FVals_i)
+  U_vals <- c(U_vals, UVals_i)
+}
+# Add the values to the Spatial hexagon layer:
+Hx <- Hx %>%
+  mutate(Agricultural = A_vals, Forest = F_vals, Urban = U_vals)
+```
+
+## Cases
+
+```{r}
+# Variable to spread categorical variables
+unfold <- function(Dat, Var){
+  Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
+}
+```
+
+
+```{r}
+TSp <- read.csv("../Data/Period_1/TimeSeries_day_50.csv") %>% 
+  unfold(., "HOST") %>%
+  mutate(Positive = 1) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
+  st_join(BHx) %>% data.frame() %>% 
+  group_by(idhex, DATE.CONF) %>%
+  summarise(cases = sum(Positive), wb_cases = sum(wild.boar), ph_cases = sum(pig.herd))
+
+# How does the cumulative number of cases per grid looks like?
+TSp %>%
+  filter(!is.na(DATE.CONF)) %>%
+  group_by(idhex) %>%
+  mutate(cases_cum = cumsum(cases)) %>%
+  ggplot() +
+  geom_line(aes(x=DATE.CONF, y=cases_cum, col = idhex))
+```
+
+```{r}
+# Add the number of cases to the data
+TSp_s <- TSp %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('cases', 'wb_cases', 'ph_cases'), .funs = sum)
+
+Hx <- Hx %>%
+  left_join(TSp_s, by = 'idhex')
+
+Hx %>%
+  data.frame() %>%
+  arrange(desc(wb_cases))
+```
+
+
+```{r}
+TSn <- read.csv("../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") %>%
+  unfold(., "HOST") %>%
+  mutate(Test = 0) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
+  st_join(BHx) %>% data.frame() %>%
+  group_by(idhex) %>%
+  summarise(tests = sum(Test), wb_tests = sum(wild.boar)) 
+
+Hx %>%
+  select(-c(N_tests:NT)) %>%
+  left_join(TSp, by = 'idhex')
+
+HxDF <- Hx %>%
+  filter(!is.na(Pop)) %>%
+  data.frame()
+
+HxDF %>%
+  arrange(desc(Result))
+
+HxDF %>%
+  # mutate(wb_bool = ifelse(Result != 0 & wild.boar != 0, 1, 0)) %>% # For wild boars
+  mutate(wb_bool = ifelse(Result != 0 & pig.herd != 0, 1, 0)) %>% # For pig herds
+  group_by(wb_bool) %>%
+  summarise_at(.vars = c('is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F', 'density', 'Agricultural', 'Forest', 'Urban', 'E_WB'), .funs = mean)
+```
+  
+```{r}
+TS %>%
+  tidyr::spread(data = ., HOST, Result)
+
+HxDF %>%
+  filter(pig.herd !=0)
+```
+  
+# Weighted linear combination
+  
+```{r}
+HxDF %>%
+  mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6))) %>%
+  ggplot() + geom_histogram(aes(density_s))
+```
+
+  
+Variables:  
+  
+  - DET: detection method:  
+    - PS- Passsive surveillance.  
+    - RZ- Detection in a site from surveillance or protection zone.  
+    - TR- Detection via tracing.  
+    - AS- Wildboar carcass via active searching  
+    - NAS- non-infected carcass via active searching.  
+    - PT- detection of in a hunted boar.  
+    - NT- non-infected hunted boar.  
+    
+
+
+```{r}
+library(scales)
+# Export data:
+Hx %>%
+  filter(!is.na(Pop)) %>%
+  mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6)),
+         WB_score = scales::rescale(x = Forest, to = c(0,.5)) +
+           scales::rescale(x = WBd, to = c(0,.5))) %>%
+  write_sf(., "../Data/Period_1/out/Hx.shp")
+```
+  
+```{r}
+TS_s %>%
+  filter(`pig herd` != 0)
+Mov %>%
+  filter(source == 623)
+```
+Pig cases does not seem to be asociated with movements (very few movements from the affected).  
+wild boar cases on those hexagons are not particularly large
+
+```{r}
+HxDF %>%
+  arrange(desc(Result)) # wild boar cases seem to hapen in forest areas
+```
+
+
