@@ -3,10 +3,10 @@
 .RData
 .Ruserdata
 Data/
+Data*
 Code/GAMA_ASF/.metadata/
 Code/GAMA_ASF/ASF/includes/
 Code/GAMA_ASF/ASF/results/
 LocalData/
 Code/R/L_Period_1.Rmd
 Code/R/L_Period_1.nb.html
-./Data
