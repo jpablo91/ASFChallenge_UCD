@@ -6,4 +6,6 @@
 - Also, adding `Data*` to the `.gitignore` file ignores these symlinks
 - Going forward we might want to do the same thing for the GAMA related data folders...
 
+#### Parameter values
+- Kathleen will help us determine which values to use and what makes sense wrt ASF
 
