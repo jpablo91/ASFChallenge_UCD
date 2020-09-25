@@ -141,7 +141,7 @@ plot(WBr)
 # Land cover
 
 ```{r}
-LC <- st_read("../Data/Island_LANDCOVER.shp")
+LC <- st_read("../Data/Shapefiles/Island_LANDCOVER.shp")
 ```
 
 
@@ -221,7 +221,7 @@ TSp <- read.csv("../Data/Period_1/TimeSeries_day_50.csv") %>%
 
 # How does the cumulative number of cases per grid looks like?
 TSp %>%
-  filter(!is.na(DATE.CONF)) %>%
+  dplyr::filter(!is.na(DATE.CONF)) %>%
   group_by(idhex) %>%
   mutate(cases_cum = cumsum(cases)) %>%
   ggplot() +
@@ -253,7 +253,7 @@ TSn <- read.csv("../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") %>%
   summarise(tests = sum(Test), wb_tests = sum(wild.boar)) 
 
 Hx %>%
-  select(-c(N_tests:NT)) %>%
+  dplyr::select(-c(N_tests:NT)) %>%
   left_join(TSp, by = 'idhex')
 
 HxDF <- Hx %>%
