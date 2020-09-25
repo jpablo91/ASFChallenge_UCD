@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-library(dplyr); library(ggplot2); library(ggpubr)
+library(dplyr); library(ggplot2); library(ggpubr); library(sf)
 ################## FUNCTIONS ####################
 # Read Simulations
 ReadSims <- function(dir){
@@ -24,7 +24,7 @@ Q75 <- function(x) quantile(x, 0.75)
 # Function for summarizing the cycles
 CycleSums <- function(x){
   x %>%
-    select(-Sim) %>%
+    dplyr::select(-Sim) %>%
     group_by(cycle) %>%
     summarise_all(.funs = c(median, Q25, Q75))
 }
@@ -67,9 +67,6 @@ Hx_sim <- Hx_sim %>%
   group_by(idhex) %>%
   summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
-Hx_sim %>%
-  arrange(desc(introduction_ph))
-
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
   filter(!is.na(Pop)) %>%
@@ -84,5 +81,26 @@ Hx %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+```
+
+```{r}
+Hx_sim %>%
+  arrange(desc(introduction_ph))
+
+Hx %>%
+  left_join(Hx_sim, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  ggplot() +
+  geom_sf(aes(fill = introduction_ph))
+
+Hx %>%
+  left_join(Hx_sim, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  ggplot() +
+  geom_sf(aes(fill = introduction_wb))
 ```
 
