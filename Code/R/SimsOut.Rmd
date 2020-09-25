@@ -39,12 +39,17 @@ PlotCycles <- function(x, var, col){
     theme_minimal() + ylab(var) +
     theme(legend.position = "none") 
 }
+## Function to convert from long to wide
+# Variable to spread categorical variables
+unfold <- function(Dat, Var){
+  Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
+}
 ```
 
 
 
 ```{r fig.height=3, fig.width=8}
-S0 <- ReadSims(dir = "../Data/Period_1/SimsOut/EC/")
+S0 <- ReadSims(dir = "../../LocalData/SimsOut/Baseline/EC/")
 
 P1 <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 P2 <- PlotCycles(S0, var = "Infected_WB", col = "brown")
@@ -54,13 +59,16 @@ ggarrange(P1, P2)
 
 # Create the map 
 ```{r}
-Hx_sim <- ReadSims(dir = "../Data/Period_1/SimsOut/Agents/")
+Hx_sim <- ReadSims(dir = "../../LocalData/SimsOut/Baseline/Agents/")
 
 Hx_sim <- Hx_sim %>%
   mutate(idhex = as.character(idhex)) %>%
   unfold(., "Disease_status") %>%
   group_by(idhex) %>%
-  summarise(Epidemic = sum(Epidemic))
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+Hx_sim %>%
+  arrange(desc(introduction_ph))
 
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
