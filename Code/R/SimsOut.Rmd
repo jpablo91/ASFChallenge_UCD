@@ -8,7 +8,7 @@ library(dplyr); library(ggplot2); library(ggpubr)
 ################## FUNCTIONS ####################
 # Read Simulations
 ReadSims <- function(dir){
-  f <- list.files(dir, full.names = T)
+  f <- list.files(dir, full.names = TRUE)
   
   L <- lapply(1:length(f), function(x){
     read.csv(f[x], fileEncoding = 'UTF-8') %>%

@@ -17,3 +17,18 @@ The data original data and the data processed for the model can be found in the 
 
   - [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag)  
   - [ASF Challange website](https://www6.inrae.fr/asfchallenge/)
+
+
+### Directory structure
+	|
+    |- Data: symlink with [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag)  
+	|
+    |- Code: code for manuscript
+	|   |
+	|   |- R: for R, Rmd, and associated files
+	|   |
+	|   |- GAMA_ASF: for GAMA code (javascript syntax highlighting helps locally)
+	|
+	|- Figures: generated figures, maps, etc
+	|
+	|- Report: notes and results for sharing
