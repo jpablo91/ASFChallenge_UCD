@@ -10,6 +10,8 @@ library(sf)
 library(ggplot2)
 library(sp)
 library(STNet)
+library(raster)
+library(fasterize)
 ```
 
 
@@ -57,7 +59,7 @@ herdsHx <- herdsSp %>%
   summarise_at(.vars = c('N', 'size', 'is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F'), .funs = sum) %>%
   mutate(density = size/ N) %>% # expected animals per farm
   data.frame() %>%
-  select(-geometry) %>%
+  dplyr::select(-geometry) %>%
   rename(Farms = N, Pop = size)
 
 Hx <- BHx %>%
@@ -96,12 +98,12 @@ Hx <- Hx %>%
 
 MovHx %>%
   mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
-  select(ID, sourceHx, destHx) %>%
+  dplyr::select(ID, sourceHx, destHx) %>%
   # slice(1:200) %>%
-  write.csv(., "../Data/Period_1/out/MovHx.csv", row.names = F, quote = F)
+  write.csv(., "../Data/Period_1/out/MovHx.csv", row.names = FALSE, quote = FALSE)
 
 MovHx %>%
-  filter(sourceHx == 1429)
+  dplyr::filter(sourceHx == 1429)
 ```
 
 
@@ -122,7 +124,7 @@ extent(r) <- extent(Is)
 WBr <- fasterize::fasterize(sf = Is, raster = r, field = "WB_dens", fun = "sum")
 
 Vals <- lapply(1:nrow(Hx), function(x){
-  mean(raster::extract(WBr, Hx[x,])[[1]], na.rm = T)
+  mean(raster::extract(WBr, Hx[x,])[[1]], na.rm = TRUE)
 })
 
 Hx <- Hx %>%
