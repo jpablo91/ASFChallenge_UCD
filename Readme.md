@@ -32,3 +32,10 @@ The data original data and the data processed for the model can be found in the 
 	|- Figures: generated figures, maps, etc
 	|
 	|- Report: notes and results for sharing
+
+### Note
+Parts of this code use the `STNet` package written by Pablo. To install it:
+
+```r
+remotes::install_github("jpablo91/STNet")
+```
