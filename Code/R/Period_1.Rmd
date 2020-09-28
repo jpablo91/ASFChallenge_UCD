@@ -27,9 +27,13 @@ Deadline: October 8th, 2020.
 # Data overview:  
   
 ```{r Create hexagonal grid}
+# Get the CRS that we will use for the data
+projCRS <- shapefile("../../LocalData/InitialData/Island_ADMIN.shp") %>% crs()
 HxRes <- 15e3
 # Read the shapefile
 Is <- sf::read_sf("../Data/InitialData/Island_ADMIN.shp")
+# explicitly indicate the CRS in sp format to avoid future issues when converting between formats
+st_crs(Is) <- projCRS
 # Convert to a field
 Border <- as(raster::extent(Is), "SpatialPolygons") %>%
   sf::st_as_sf()
@@ -122,6 +126,8 @@ r <- raster(ncol = 1000, nrow = 1000)
 extent(r) <- extent(Is)
 
 WBr <- fasterize::fasterize(sf = Is, raster = r, field = "WB_dens", fun = "sum")
+# Specify the CRS
+crs(WBr) <- projCRS
 
 Vals <- lapply(1:nrow(Hx), function(x){
   mean(raster::extract(WBr, Hx[x,])[[1]], na.rm = TRUE)
@@ -157,6 +163,8 @@ We will put all the information in a raster so we can then extract and summarize
 library(raster)
 # Use the function fasterize to sum the number of N over each pixel of our raster
 LCr <- fasterize::fasterize(sf = LC, raster = r, field = "LC", fun = "sum")
+# Specify the CRS
+crs(LCr) <- projCRS
 # Get the unique values to see if worked
 unique(values(LCr))
 ```

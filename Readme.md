@@ -7,6 +7,17 @@ Hi all, I updated the repo, there are 3 main files:
   - [Current model](Code/GAMA_ASF/ASF/models/ASF1_2.gamls): This is the gama code for the model.  
   
 Make sure to put the get the data from the shared box folder and put it in the correct directories if you want to run the code.  
+
+## Some important dates: 
+  
+  - First submission **October 8**.  
+  - Second Submission **November 23**.  
+  - Third submission **January 13**.  
+  
+## Weekly meeting
+
+Our weekly meeting time is **Fridays 12 pm**  
+  
   
 ### Data:  
 
@@ -16,7 +27,8 @@ The data original data and the data processed for the model can be found in the 
 ### Some Links:  
 
   - [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag)  
-  - [ASF Challange website](https://www6.inrae.fr/asfchallenge/)
+  - [ASF Challange website](https://www6.inrae.fr/asfchallenge/)  
+  - [Zoom link for weekly meeting](https://ucdavis.zoom.us/j/92858469793?pwd=anRsZld0Y01uWWhUTDJSWWQxQXVFUT09)
 
 
 ### Directory structure
