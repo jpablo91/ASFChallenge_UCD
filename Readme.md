@@ -2,9 +2,9 @@
 
 Hi all, I updated the repo, there are 3 main files:  
   
-  - [Data processing for the period_1](Code/Period_1.Rmd): Here I do some processing of the data to obtain te formats required for the model and see some of the distribution of cases.  
-  - [Processing of the simulation outputs](Code/SimsOut.Rmd): In this one I create the figures for the current model.  
-  - [Current model](Code/GAMA_ASF/ASF/models/ASF1_2.gamls): This is the gama code for the model.  
+  - [Data processing for the period_1](Code/R/Period_1.Rmd): Here I do some processing of the data to obtain te formats required for the model and see some of the distribution of cases.  
+  - [Processing of the simulation outputs](Code/R/SimsOut.Rmd): In this one I create the figures for the current model.  
+  - [Current model](Code/GAMA_ASF/ASF/models/ASF1_2.gaml): This is the gama code for the model.  
   
 Make sure to put the get the data from the shared box folder and put it in the correct directories if you want to run the code.  
 
