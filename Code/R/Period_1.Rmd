@@ -28,10 +28,11 @@ Deadline: October 8th, 2020.
   
 ```{r Create hexagonal grid}
 # Get the CRS that we will use for the data
-projCRS <- shapefile("../../LocalData/InitialData/Island_ADMIN.shp") %>% crs()
+projCRS <- shapefile("../../Data/InitialData/Island_ADMIN.shp") %>% crs()
+# Resolution of the grid:
 HxRes <- 15e3
 # Read the shapefile
-Is <- sf::read_sf("../Data/InitialData/Island_ADMIN.shp")
+Is <- sf::read_sf("../../Data/InitialData/Island_ADMIN.shp")
 # explicitly indicate the CRS in sp format to avoid future issues when converting between formats
 st_crs(Is) <- projCRS
 # Convert to a field
@@ -46,7 +47,7 @@ BHx <- STNet::HexGrid(cellsize = HxRes, Shp = Border)
 ## Herds.  
 
 ```{r}
-herds50 <- read.csv("../Data/Period_1/herds_day_50.csv")
+herds50 <- read.csv("../../Data/Period_1/herds_day_50.csv")
 ######## Summarize herds ########
 herds50 <- herds50 %>%
   mutate(N=1) %>%
@@ -74,7 +75,7 @@ Hx <- BHx %>%
 ## Movements
 
 ```{r}
-Mov <- read.csv("../Data/Period_1/moves_Players_day_50.csv")
+Mov <- read.csv("../../Data/Period_1/moves_Players_day_50.csv")
 
 MovHx <- Mov %>%
   left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('source' = 'population_id')) %>%
@@ -104,7 +105,7 @@ MovHx %>%
   mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
   dplyr::select(ID, sourceHx, destHx) %>%
   # slice(1:200) %>%
-  write.csv(., "../Data/Period_1/out/MovHx.csv", row.names = FALSE, quote = FALSE)
+  write.csv(., "../../Data/Period_1/out/MovHx.csv", row.names = FALSE, quote = FALSE)
 
 MovHx %>%
   dplyr::filter(sourceHx == 1429)
@@ -114,7 +115,7 @@ MovHx %>%
 # wild boars
 
 ```{r}
-hunting <- read.csv("../Data/InitialData/WB_HuntingBag.csv", sep = ";")
+hunting <- read.csv("../../Data/InitialData/WB_HuntingBag.csv", sep = ";")
 
 Is <- Is %>% 
   mutate(ID = as.integer(as.character(ID)), area = st_area(.)) %>%
@@ -147,7 +148,7 @@ plot(WBr)
 # Land cover
 
 ```{r}
-LC <- st_read("../Data/Shapefiles/Island_LANDCOVER.shp")
+LC <- st_read("../../Data/Shapefiles/Island_LANDCOVER.shp")
 ```
 
 
@@ -219,7 +220,7 @@ unfold <- function(Dat, Var){
 
 
 ```{r}
-TSp <- read.csv("../Data/Period_1/TimeSeries_day_50.csv") %>% 
+TSp <- read.csv("../../Data/Period_1/TimeSeries_day_50.csv") %>% 
   unfold(., "HOST") %>%
   mutate(Positive = 1) %>%
   st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
@@ -252,7 +253,7 @@ Hx %>%
 
 
 ```{r}
-TSn <- read.csv("../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") %>%
+TSn <- read.csv("../../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") %>%
   unfold(., "HOST") %>%
   mutate(Test = 0) %>%
   st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
@@ -316,14 +317,15 @@ Hx %>%
   mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6)),
          WB_score = scales::rescale(x = Forest, to = c(0,.5)) +
            scales::rescale(x = WBd, to = c(0,.5))) %>%
-  write_sf(., "../Data/Period_1/out/Hx.shp")
+  write_sf(., "../../Data/Period_1/out/Hx.shp")
 ```
   
 ```{r}
-TS_s %>%
-  filter(`pig herd` != 0)
+TSp_s %>%
+  filter(ph_cases != 0)
+
 Mov %>%
-  filter(source == 623)
+  filter(source == 785)
 ```
 Pig cases does not seem to be asociated with movements (very few movements from the affected).  
 wild boar cases on those hexagons are not particularly large
