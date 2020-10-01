@@ -14,18 +14,16 @@ library(raster)
 library(fasterize)
 ```
 
+# Objectives:
 
-# Objectives:  
-  
-  - Predict the expected number and location of outbreaks detected in farms and wild boars in the next four weeks.  
-  - Predict the effectiveness of fencing infected zones.  
-  - Advise regarding implementation of the increased hunting pressure in the fenced area.  
-  
-Deadline: October 8th, 2020.  
-  
-  
-# Data overview:  
-  
+-   Predict the expected number and location of outbreaks detected in farms and wild boars in the next four weeks.
+-   Predict the effectiveness of fencing infected zones.
+-   Advise regarding implementation of the increased hunting pressure in the fenced area.
+
+Deadline: **October 8th, 2020**.
+
+# Data overview:
+
 ```{r Create hexagonal grid}
 # Get the CRS that we will use for the data
 projCRS <- shapefile("../../Data/InitialData/Island_ADMIN.shp") %>% crs()
@@ -43,8 +41,7 @@ st_crs(Border) <- st_crs(Is)
 BHx <- STNet::HexGrid(cellsize = HxRes, Shp = Border)
 ```
 
-  
-## Herds.  
+## Herds.
 
 ```{r}
 herds50 <- read.csv("../../Data/Period_1/herds_day_50.csv")
@@ -70,7 +67,6 @@ herdsHx <- herdsSp %>%
 Hx <- BHx %>%
   left_join(herdsHx)
 ```
-
 
 ## Movements
 
@@ -111,7 +107,6 @@ MovHx %>%
   dplyr::filter(sourceHx == 1429)
 ```
 
-
 # wild boars
 
 ```{r}
@@ -151,7 +146,6 @@ plot(WBr)
 LC <- st_read("../../Data/Shapefiles/Island_LANDCOVER.shp")
 ```
 
-
 ```{r}
 # Recode the land cover levels to manipulate later
 LC <- LC %>%
@@ -161,7 +155,6 @@ LC <- LC %>%
 We will put all the information in a raster so we can then extract and summarize the values per hexagon
 
 ```{r}
-library(raster)
 # Use the function fasterize to sum the number of N over each pixel of our raster
 LCr <- fasterize::fasterize(sf = LC, raster = r, field = "LC", fun = "sum")
 # Specify the CRS
@@ -171,6 +164,7 @@ unique(values(LCr))
 ```
 
 Some of the values are not the ones we recoded for (there might be some overlapping of the values due to the resolution used), we can see that the unexpected numbers are just sums of two of the same type, so we will just replace those:
+
 ```{r}
 # Replace NAs for 0s
 LCr[is.na(LCr[])] <- 0
@@ -182,9 +176,7 @@ LCr[(LCr[] > 100 & LCr[] < 900)] <- 100
 plot(LCr)
 ```
 
-
-
-Now we will summarise the values per hexagon
+Now we will summarize the values per hexagon
 
 ```{r}
 # Create empty vectors
@@ -211,6 +203,8 @@ Hx <- Hx %>%
 
 ## Cases
 
+Cases comes in two datasets, one for positives and other for negative tests.  
+
 ```{r}
 # Variable to spread categorical variables
 unfold <- function(Dat, Var){
@@ -218,8 +212,8 @@ unfold <- function(Dat, Var){
 }
 ```
 
-
 ```{r}
+# Read the positives
 TSp <- read.csv("../../Data/Period_1/TimeSeries_day_50.csv") %>% 
   unfold(., "HOST") %>%
   mutate(Positive = 1) %>%
@@ -242,17 +236,16 @@ TSp %>%
 TSp_s <- TSp %>%
   group_by(idhex) %>%
   summarise_at(.vars = c('cases', 'wb_cases', 'ph_cases'), .funs = sum)
-
+# Join to the Hx Shapefile
 Hx <- Hx %>%
   left_join(TSp_s, by = 'idhex')
-
-Hx %>%
-  data.frame() %>%
-  arrange(desc(wb_cases))
+# Hx %>%
+#   data.frame() %>%
+#   arrange(desc(wb_cases))
 ```
 
-
 ```{r}
+# Now read the negatives
 TSn <- read.csv("../../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") %>%
   unfold(., "HOST") %>%
   mutate(Test = 0) %>%
@@ -260,10 +253,6 @@ TSn <- read.csv("../../Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv") 
   st_join(BHx) %>% data.frame() %>%
   group_by(idhex) %>%
   summarise(tests = sum(Test), wb_tests = sum(wild.boar)) 
-
-Hx %>%
-  dplyr::select(-c(N_tests:NT)) %>%
-  left_join(TSp, by = 'idhex')
 
 HxDF <- Hx %>%
   filter(!is.na(Pop)) %>%
@@ -278,7 +267,7 @@ HxDF %>%
   group_by(wb_bool) %>%
   summarise_at(.vars = c('is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F', 'density', 'Agricultural', 'Forest', 'Urban', 'E_WB'), .funs = mean)
 ```
-  
+
 ```{r}
 TS %>%
   tidyr::spread(data = ., HOST, Result)
@@ -286,53 +275,79 @@ TS %>%
 HxDF %>%
   filter(pig.herd !=0)
 ```
-  
+
 # Weighted linear combination
-  
+
 ```{r}
 HxDF %>%
   mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6))) %>%
   ggplot() + geom_histogram(aes(density_s))
 ```
 
-  
-Variables:  
-  
-  - DET: detection method:  
-    - PS- Passsive surveillance.  
-    - RZ- Detection in a site from surveillance or protection zone.  
-    - TR- Detection via tracing.  
-    - AS- Wildboar carcass via active searching  
-    - NAS- non-infected carcass via active searching.  
-    - PT- detection of in a hunted boar.  
-    - NT- non-infected hunted boar.  
-    
+Variables:
 
+-   DET: detection method:
+
+    -   PS- Passive surveillance.
+    -   RZ- Detection in a site from surveillance or protection zone.
+    -   TR- Detection via tracing.
+    -   AS- Wild boar carcass via active searching
+    -   NAS- non-infected carcass via active searching.
+    -   PT- detection of in a hunted boar.
+    -   NT- non-infected hunted boar.
 
 ```{r}
 library(scales)
 # Export data:
 Hx %>%
-  filter(!is.na(Pop)) %>%
-  mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6)),
-         WB_score = scales::rescale(x = Forest, to = c(0,.5)) +
+  filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
+  mutate(Pop = ifelse(is.na(Pop), 0.0001, Pop), # If there is no PH pop, set a very small number for the model
+    density_s = scales::rescale(x = density, to = c(0.1,0.6)), # Score based on the density
+    WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
            scales::rescale(x = WBd, to = c(0,.5))) %>%
   write_sf(., "../../Data/Period_1/out/Hx.shp")
 ```
-  
+
 ```{r}
 TSp_s %>%
   filter(ph_cases != 0)
-
 Mov %>%
   filter(source == 785)
 ```
-Pig cases does not seem to be asociated with movements (very few movements from the affected).  
+
+Pig cases does not seem to be asociated with movements (very few movements from the affected).\
 wild boar cases on those hexagons are not particularly large
 
 ```{r}
 HxDF %>%
-  arrange(desc(Result)) # wild boar cases seem to hapen in forest areas
+  arrange(desc(wb_cases)) # wild boar cases seem to happen in forest areas
+```
+
+## Interventions
+
+### Containtment barriers.  
+
+Barriers will be implemented as a rectangle whose diagonal is between points (773676.4, 6347189) and (833676.4, 6437189). We expect that the barriers will be active in 10 days (60 days after the detection of the index case).  
+
+```{r}
+# Use the diagonal points to create the square
+fenceSp <- cbind(x = c(833676.4, 773676.4, 773676.4, 833676.4, 833676.4), y = c(6347189, 6347189, 6437189, 6437189, 6347189))
+# Convert to polygon
+fenceSp <- st_polygon(list(fenceSp)) %>%
+  st_geometry()
+# Set the project CRS
+st_crs(fenceSp) <- st_crs(Hx)
+# SHow it in a map
+Hx %>%
+  filter(!is.na(Farms)) %>%
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = fenceSp, alpha = 0.3, col = 'red')
+# export the shape:
+fenceSp %>% st_write(., "../../Data/Period_1/out/fenceSp.shp")
 ```
 
 
+### Increased hunting pressure.  
+
+The goal is to kill about 90% of the alive wild boar within the fenced area, but to test 100%.  
