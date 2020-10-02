@@ -9,11 +9,19 @@ import "Interventions.gaml"
 
 global{
 	//~~~~~~ simulation steps: ~~~~~~
+//	float seed <- 2.0;
 	float step <- 1 #day;
 	int current_day update: int(time/#day);
-	int scenario <- 0; // scenario 0 = baseline, 1 = movement restrictions and zoning
+	/*
+	 * Scenarios:
+	 * 0 = Baseline
+	 * 1 = Mov restriction alone
+	 * 2 = Mov restriction and hunting pressure
+	 */
+	int Scenario <- 1; // scenario 0 = baseline, 1 = movement restrictions alone 
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx.shp");
+	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
 	int SimLength <- 60;
 	
@@ -36,11 +44,18 @@ global{
 	float Transmission_d;
 	float AdjSpreadWB_p <- 0.3; // probability of adjacent spread via WB
 	
+	// Interventions
+	bool MovRestriction;
+	bool HuntingPressure;
+	float HuntingEffect <- 0.10;
 	
 	init{
+		write 'seed: ' + seed;
 		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*1, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass"))]{
+			// Contiguous neighbors
 			Nbs_adj <- Hx at_distance 1#m;			
 		}
+		create Fence from:Fence_shp;
 		// Initial infection:
 		ask Init_I among Hx{
 //			I_P <- 1.0;
@@ -54,9 +69,16 @@ global{
 			Hx n <- Hx first_with(each.idhex = elt[1]);
 			add (Hx first_with(each.idhex = elt[2])) to: n.Nbs_trade;
 		}
-		// Contiguous Nbs
 		
 		create interventions;
+		// Set scenarios
+		if Scenario = 1{
+			MovRestriction <- true;
+		} 
+		if Scenario = 2 {
+			MovRestriction <- true;
+			HuntingPressure <- true;
+		}
 	}
 	
 	reflex Count{
@@ -81,18 +103,17 @@ global{
 //=====================SPECIES: HEXAGON=====================//
 species Hx{
 	//~~~~~~ Population Parameters: ~~~~~~
-	int Farms;
+	float Farms;
 	float Mov;
 	int out;
 	int in;
 	int idhex;
-	int Pop;
+	float Pop;
 	Hx Dest;
 	list<Hx> Nbs_trade;
 	list<Hx> Nbs_adj;
 	float E_anmls;
-//	int E_WB;
-	int N_wb;
+	float N_wb;
 	float dnsty_s;
 	float WB_scor;
 	float p_Adj_Spread <- WB_scor*AdjSpreadWB_p;
@@ -129,7 +150,7 @@ species Hx{
 	
 	
    	//--------------EQUATIONS--------------//
-	// Usiing built in equaations
+	// Using built in equations
 	equation SIR_P type:SIR vars: [S_P,I_P,R_P, t] params: [Farms, local_Bp, local_gamma_p];
 	equation SIR_WB type:SIR vars: [S_wb,I_wb,R_wb, t] params: [N_wb, Beta_wb, Gamma_wb];
 	
@@ -143,7 +164,7 @@ species Hx{
 	action Ship{
 		Dest <- one_of(Nbs_trade);
 		Dest.in <- Dest.in + 1;
-		
+		// Exporting a infected pig
 		if flip(Export_p){
 			Dest.I_P <- Dest.I_P + 1;
 			introduction_ph <- introduction_ph + 1;
@@ -162,20 +183,25 @@ species Hx{
 		 	float Infected_p <- I_P/Pop;
 		 	Export_p <- Infected_p;
 		 }
-		 //baseline probability of detection
+		 //If detected, the surveillance will increase 10 fold
 		 if (flip(p_detection_ph) and !ph_detected){
 		 	ph_detected <- true;
-		 	local_gamma_p <- Gamma_p*10;
-//		 	movement_restrictions <- true;
+		 	local_gamma_p <- Gamma_p*100;
+		 	write "Detected in " + name + 'at day:' + cycle;
+		 	if MovRestriction{
+		 		movement_restrictions <- true;
+		 	}
+		 	
 		 	
 		 }
 	}
 	
-	//~~~~~~~~~~~wild boars epidemic
+	//~~~~~~~~~~~ wild boars epidemic
 	reflex epidemic_wb when: I_wb > 0{
 		solve SIR_WB method: "Euler" step_size:h;
 		 // Probability of Wildlife-domestic transmission
-		 float InfectedWB_p <- I_wb/N_wb;
+		 float InfectedWB_p <- I_wb/N_wb; // <----- when reducing the number of WB this number goes up??
+//		 float InfectedWB_p <- I_wb/15000;
 		 if flip(InfectedWB_p/15){
 		 	I_P <- I_P + 1;
 		 	introduction_wb <- introduction_wb + 1;
@@ -215,12 +241,13 @@ experiment main type:gui{
 		display map{
 			species Hx aspect: geom;
 			species interventions;
+			species Fence aspect:geom;
 		}
 		display EpiCurve{
 			chart "SI" type: series{
 				data "Infected Pigs" value:Infected_P color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
-				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
+//				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
 			}
 		}
@@ -229,5 +256,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 50 until: cycle = SimLength{
+experiment Batch type:batch repeat: 20 until: cycle = SimLength{
 }

@@ -102,9 +102,6 @@ MovHx %>%
   dplyr::select(ID, sourceHx, destHx) %>%
   # slice(1:200) %>%
   write.csv(., "../../Data/Period_1/out/MovHx.csv", row.names = FALSE, quote = FALSE)
-
-MovHx %>%
-  dplyr::filter(sourceHx == 1429)
 ```
 
 # wild boars
@@ -118,6 +115,7 @@ Is <- Is %>%
   mutate(WB_dens = HB_2019/area) 
 # Create an empty raster (increaseing the ncol and nrow will give us a better resolution, but will also increase the computation time)
 r <- raster(ncol = 1000, nrow = 1000)
+crs(r) <- crs(Is)
 # Set the extent same as the shapefile
 extent(r) <- extent(Is)
 
@@ -301,7 +299,7 @@ library(scales)
 # Export data:
 Hx %>%
   filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
-  mutate(Pop = ifelse(is.na(Pop), 0.0001, Pop), # If there is no PH pop, set a very small number for the model
+  mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
     density_s = scales::rescale(x = density, to = c(0.1,0.6)), # Score based on the density
     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
            scales::rescale(x = WBd, to = c(0,.5))) %>%
@@ -346,6 +344,8 @@ Hx %>%
 # export the shape:
 fenceSp %>% st_write(., "../../Data/Period_1/out/fenceSp.shp")
 ```
+
+
 
 
 ### Increased hunting pressure.  

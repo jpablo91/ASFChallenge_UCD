@@ -10,7 +10,6 @@ model Interventions
 import "ASF1_2.gaml"
 
 species interventions{
-	
 	list<Hx> InfectedHx;
 	list<Hx> DetectedHx update: Hx where(each.ph_detected);
 	
@@ -32,6 +31,29 @@ species interventions{
 	// after 1st detection, hunters sample 20% of the hunted animals
 	
 	
+}
+
+species Fence{
+	bool is_active;
+	
+	// reflexes
+	// Activate the fence
+	reflex BecomeActive when: cycle = 10{
+		is_active <- true;
+		if HuntingPressure{
+			ask Hx at_distance 1#km{
+				N_wb <- N_wb*HuntingEffect;
+				S_wb <- S_wb*HuntingEffect;
+				I_wb <- I_wb*HuntingEffect;
+				R_wb <- R_wb*HuntingEffect;
+		}
+			
+		}
+	}
+	//~~~~~~~ Geometry:~~~~~~~~
+	aspect geom{
+		draw shape color: rgb(0, 0, 0, 0) border: is_active? #red:#grey;
+	}
 }
 /* Insert your model definition here */
 

@@ -47,9 +47,10 @@ unfold <- function(Dat, Var){
 ```
 
 
+# Scenario 0: Baseline
 
 ```{r fig.height=3, fig.width=8}
-S0 <- ReadSims(dir = "../../LocalData/SimsOut/Baseline/EC/")
+S0 <- ReadSims(dir = "../../Data/Period_1/Sims/S00/EC/")
 
 P1 <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 P2 <- PlotCycles(S0, var = "Infected_WB", col = "brown")
@@ -57,9 +58,10 @@ P2 <- PlotCycles(S0, var = "Infected_WB", col = "brown")
 ggarrange(P1, P2)
 ```
 
-# Create the map 
+## Map 
 ```{r}
-Hx_sim <- ReadSims(dir = "../../LocalData/SimsOut/Baseline/Agents/")
+Hx_sim <- ReadSims(dir = "../../Data/Period_1/Sims/S00/Agents/")
+Hx <- st_read("../../Data/Period_1/out/Hx.shp")
 
 Hx_sim <- Hx_sim %>%
   mutate(idhex = as.character(idhex)) %>%
@@ -104,3 +106,66 @@ Hx %>%
   geom_sf(aes(fill = introduction_wb))
 ```
 
+# Scenario 01: Movement restrictions
+
+
+```{r fig.height=3, fig.width=8}
+S1 <- ReadSims(dir = "../../Data/Period_1/Sims/S01/EC/")
+
+P1 <- PlotCycles(S1, var = "Infected_P", col = "pink2")
+P2 <- PlotCycles(S1, var = "Infected_WB", col = "brown")
+
+ggarrange(P1, P2)
+```
+
+## Map 
+```{r}
+Hx_sim01 <- ReadSims(dir = "../../Data/Period_1/Sims/S01/Agents/")
+
+Hx_sim01 <- Hx_sim01 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+Hx %>%
+  left_join(Hx_sim01, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  ggplot() +
+  geom_sf(aes(fill = Epidemic)) +
+  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+```
+
+# Scenario 02: Movement restrictions and hunting pressure
+
+
+```{r fig.height=3, fig.width=8}
+S2 <- ReadSims(dir = "../../Data/Period_1/Sims/S02/EC/")
+
+P1 <- PlotCycles(S2, var = "Infected_P", col = "pink2")
+P2 <- PlotCycles(S2, var = "Infected_WB", col = "brown")
+
+ggarrange(P1, P2)
+```
+
+## Map 
+```{r}
+Hx_sim02 <- ReadSims(dir = "../../Data/Period_1/Sims/S02/Agents/")
+
+Hx_sim02 <- Hx_sim02 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+Hx %>%
+  left_join(Hx_sim02, by = 'idhex') %>%
+  filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  ggplot() +
+  geom_sf(aes(fill = Epidemic)) +
+  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+```
