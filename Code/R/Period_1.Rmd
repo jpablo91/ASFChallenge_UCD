@@ -105,6 +105,10 @@ herdsHx <- herdsSp %>%
 
 Hx <- BHx %>%
   left_join(herdsHx)
+Hx 
+
+herd50 %>%
+  count(is_outdoor, is_commercial)
 ```
 
 ## Movements

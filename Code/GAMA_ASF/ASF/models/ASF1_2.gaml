@@ -9,7 +9,7 @@ import "Interventions.gaml"
 
 global{
 	//~~~~~~ simulation steps: ~~~~~~
-//	float seed <- 2.0;
+	float seed <- int(self) + 1.0;
 	float step <- 1 #day;
 	int current_day update: int(time/#day);
 	/*
@@ -17,30 +17,31 @@ global{
 	 * 0 = Baseline
 	 * 1 = Mov restriction alone
 	 * 2 = Mov restriction and hunting pressure
+	 * 3 = Fencing
 	 */
-	int Scenario <- 1; // scenario 0 = baseline, 1 = movement restrictions alone 
+	int Scenario <- 3; // scenario 0 = baseline, 1 = movement restrictions alone 
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
-	int SimLength <- 60;
+	int SimLength <- 50;
 	
 	//~~~~~~ Disease Parameters ~~~~~~
 	// Pigs
 	int Init_I <- 1; // Number of initial infected
-	float Susceptible_P;
-	float Infected_P update: Hx sum_of(each.I_P);
-	float Recovered_P;
-	float Beta_p <- 0.5/step; // Transmission rate for pigs
-	float Gamma_p <- 0.001/step; // Base detection rate
+	float Susceptible_P min: 0.0;
+	float Infected_P update: Hx sum_of(each.I_P) min: 0.0;
+	float Recovered_P min: 0.0;
+	float Beta_p <- 0.6/step; // Transmission rate for pigs
+	float Gamma_p <- 0.002/step; // Base detection rate
 	
 	// Wild Boars
 	//	int Init_I <- 1; // Number of initial infected
 	float Susceptible_WB;
 	float Infected_WB update: float(Hx sum_of(each.I_wb));
 	float Recovered_WB;
-	float Beta_wb <- 0.05/step; // Transmission rate for wild boars
-	float Gamma_wb <- 0.001/step;
+	float Beta_wb <- 0.06/step; // Transmission rate for wild boars
+	float Gamma_wb <- 0.001/step; 
 	float Transmission_d;
 	float AdjSpreadWB_p <- 0.3; // probability of adjacent spread via WB
 	
@@ -48,10 +49,13 @@ global{
 	bool MovRestriction;
 	bool HuntingPressure;
 	float HuntingEffect <- 0.10;
+	float HuntingPressureSpeed <- 20.0;
+	float AwarenessEffect <- 50.0;
+	bool Fencing;
 	
 	init{
 		write 'seed: ' + seed;
-		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*1, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass"))]{
+		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass"))]{
 			// Contiguous neighbors
 			Nbs_adj <- Hx at_distance 1#m;			
 		}
@@ -78,6 +82,11 @@ global{
 		if Scenario = 2 {
 			MovRestriction <- true;
 			HuntingPressure <- true;
+		}
+		if Scenario = 3{
+			MovRestriction <- true;
+			HuntingPressure <- true;
+			Fencing <- true;
 		}
 	}
 	
@@ -137,6 +146,7 @@ species Hx{
 	float S_wb <- N_wb - I_wb;
 	float I_wb;
 	float R_wb;
+	float local_gamma_wb <- Gamma_wb;
 	
 	string Disease_status;
 	// interventions
@@ -146,6 +156,8 @@ species Hx{
 	bool wb_detected;
 	bool ph_detected;
 	bool movement_restrictions;
+	
+	int Wb_i;
 	
 	
 	
@@ -186,7 +198,7 @@ species Hx{
 		 //If detected, the surveillance will increase 10 fold
 		 if (flip(p_detection_ph) and !ph_detected){
 		 	ph_detected <- true;
-		 	local_gamma_p <- Gamma_p*100;
+		 	local_gamma_p <- Gamma_p*AwarenessEffect;
 		 	write "Detected in " + name + 'at day:' + cycle;
 		 	if MovRestriction{
 		 		movement_restrictions <- true;
@@ -199,13 +211,26 @@ species Hx{
 	//~~~~~~~~~~~ wild boars epidemic
 	reflex epidemic_wb when: I_wb > 0{
 		solve SIR_WB method: "Euler" step_size:h;
+		
 		 // Probability of Wildlife-domestic transmission
 		 float InfectedWB_p <- I_wb/N_wb; // <----- when reducing the number of WB this number goes up??
-//		 float InfectedWB_p <- I_wb/15000;
-		 if flip(InfectedWB_p/15){
-		 	I_P <- I_P + 1;
-		 	introduction_wb <- introduction_wb + 1;
+		
+		 if flip(0.1){ // if a probability representing the chance of wildlife-domestic contact What value??
+		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number
+		 	if(Wb_i < I_wb){
+		 		I_P <- I_P + 1;
+		 		introduction_wb <- introduction_wb + 1;
+		 		write "Wildlife-Domestic transmission";
+		 	}
 		 }
+		 // ~~~ Previous approaches:
+//		 float InfectedWB_p <- I_wb/15000; // Define the probability of w-d by area??
+// Probability of w-d based on the 
+//		 if flip(InfectedWB_p/15){
+//		 	I_P <- I_P + 1;
+//		 	introduction_wb <- introduction_wb + 1;
+//		 	write "Wildlife-Domestic transmission";
+//		 }
 		 
 		}
 	
@@ -247,7 +272,7 @@ experiment main type:gui{
 			chart "SI" type: series{
 				data "Infected Pigs" value:Infected_P color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
-//				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
+				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
 			}
 		}
@@ -256,5 +281,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 20 until: cycle = SimLength{
+experiment Batch type:batch repeat: 50 until: cycle = SimLength{
 }
