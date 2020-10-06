@@ -19,7 +19,7 @@ global{
 	 * 2 = Mov restriction and hunting pressure
 	 * 3 = Fencing 
 	 */
-	int Scenario <- 0; // scenario 0 = baseline, 1 = movement restrictions alone 
+	int Scenario <- 3;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -219,23 +219,14 @@ species Hx{
 		 // Probability of Wildlife-domestic transmission
 		 float InfectedWB_p <- I_wb/N_wb; // <----- when reducing the number of WB this number goes up??
 		
-		 if flip(outdoor*2){ // if a probability representing the chance of wildlife-domestic contact What value??
-		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number
-		 	if(Wb_i < I_wb){
+		 if flip(outdoor*2){ // Probability of wildlife-domestic contact
+		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number that represent the index of a animal
+		 	if(Wb_i < I_wb){ // If the index of the animal is > than the number of infeted the disease will be transmitted
 		 		I_P <- I_P + 1;
 		 		introduction_wb <- introduction_wb + 1;
 		 		write "Wildlife-Domestic transmission";
 		 	}
-		 }
-		 // ~~~ Previous approaches:
-//		 float InfectedWB_p <- I_wb/15000; // Define the probability of w-d by area??
-// Probability of w-d based on the 
-//		 if flip(InfectedWB_p/15){
-//		 	I_P <- I_P + 1;
-//		 	introduction_wb <- introduction_wb + 1;
-//		 	write "Wildlife-Domestic transmission";
-//		 }
-		 
+		 }		 
 		}
 	
 	
@@ -285,5 +276,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 20 until: cycle = SimLength{
+experiment Batch type:batch repeat: 100 until: cycle = SimLength{
 }
