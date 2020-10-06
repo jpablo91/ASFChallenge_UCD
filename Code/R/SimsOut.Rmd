@@ -3,7 +3,7 @@ title: "Simulations Output"
 output: github_document
 ---
 
-```{r}
+```{r message=F, warning=F}
 library(dplyr); library(ggplot2); library(ggpubr); library(sf)
 ################## FUNCTIONS ####################
 # Read Simulations
@@ -45,7 +45,14 @@ unfold <- function(Dat, Var){
   Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
 }
 ```
-
+  
+  
+Variables from the 'EC' folder:  
+  
+  - *cycle:* time step of the simulation.  
+  - *Infected_P:* Number of infected pig herds.  
+  - *Infected_WB:* Number of infected wild Boars.  
+  - *Sim:* Iteration of the simulation.  
 
 # Scenario 0: Baseline
 
@@ -67,6 +74,14 @@ S0_I <- S0 %>%
 
 
 ## Map 
+  
+Variables from the Agents folder:  
+  - *idhex:* Id of the hexagonal cell.  
+  - *Epidemic:* Number of times that there was an epidemic on that polygon.  
+  - *introduction_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.  
+  - *introduction_wb:* Number of times the disease was transmitted from wild boars to a pig herd.  
+    
+    
 ```{r}
 Hx_sim <- ReadSims(dir = "../../Data/Period_1/Sims/S00/Agents/")
 Hx <- st_read("../../Data/Period_1/out/Hx.shp", quiet = T)
@@ -80,12 +95,6 @@ Hx_sim <- Hx_sim %>%
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
   filter(!is.na(Pop)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic))
-
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
@@ -93,26 +102,6 @@ Hx %>%
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
 ```
 
-```{r}
-Hx_sim %>%
-  arrange(desc(introduction_ph))
-
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = introduction_ph))
-
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = introduction_wb))
-```
 
 # Scenario 01: Movement restrictions
 

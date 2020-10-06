@@ -19,7 +19,7 @@ global{
 	 * 2 = Mov restriction and hunting pressure
 	 * 3 = Fencing
 	 */
-	int Scenario <- 3; // scenario 0 = baseline, 1 = movement restrictions alone 
+	int Scenario <- 0; // scenario 0 = baseline, 1 = movement restrictions alone 
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -40,8 +40,8 @@ global{
 	float Susceptible_WB;
 	float Infected_WB update: float(Hx sum_of(each.I_wb));
 	float Recovered_WB;
-	float Beta_wb <- 0.06/step; // Transmission rate for wild boars
-	float Gamma_wb <- 0.001/step; 
+	float Beta_wb <- 0.01/step; // Transmission rate for wild boars
+	float Gamma_wb <- 0.003/step; 
 	float Transmission_d;
 	float AdjSpreadWB_p <- 0.3; // probability of adjacent spread via WB
 	

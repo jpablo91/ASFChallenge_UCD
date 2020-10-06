@@ -54,7 +54,8 @@ new_hex_grid = function(cellsize, border, orig_shp) {
     0), cellsize = cellsize)
   HexPols <- sp::HexPoints2SpatialPolygons(HexPts)
   HexPols_sf = st_as_sf(HexPols)
-  hexgrid = st_join(hsf, orig_shp) %>%
+  
+  hexgrid = st_join(HexPols_sf, orig_shp) %>%
     filter(!is.na(ID)) %>%
     rename(orig_shp_ID = ID) %>%
     mutate(idhex = as.character(seq_len(nrow(.))))
@@ -71,7 +72,7 @@ if(FALSE){
 }
 
 ggplot() +
-  geom_sf(data = border) +
+  # geom_sf(data = border) +
   geom_sf(data = BHx, aes(fill = orig_shp_ID, col = orig_shp_ID), alpha = 0.7) +
   geom_sf(data = Is, aes(fill = ID), col = "grey35", alpha = 0.5) +
   theme_void()
@@ -107,8 +108,9 @@ Hx <- BHx %>%
   left_join(herdsHx)
 Hx 
 
-herd50 %>%
-  count(is_outdoor, is_commercial)
+## Is there any association between outdoor and commercial??
+# herds50 %>%
+#   count(is_outdoor, is_commercial)
 ```
 
 ## Movements
@@ -408,7 +410,6 @@ if(FALSE){
 ```
 
 ```{r}
-
 # There's no TS defined in the previous code
 if(FALSE){
 TS %>%

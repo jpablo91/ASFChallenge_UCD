@@ -10,6 +10,8 @@ A description of the model can be found [HERE](Notes/ModelDescription.md).
 
 Make sure to get the data from the shared box folder and put it in the correct directories if you want to run the code.  
 
+**The plots for the visualization of the results can be found [HERE](Code/R/SimsOut.md)**
+
 ## Some important dates: 
   
   - First submission **October 8**.  

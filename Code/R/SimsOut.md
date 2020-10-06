@@ -3,30 +3,6 @@ Simulations Output
 
 ``` r
 library(dplyr); library(ggplot2); library(ggpubr); library(sf)
-```
-
-    ## Warning: package 'dplyr' was built under R version 3.6.3
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
-    ## Warning: package 'ggplot2' was built under R version 3.6.3
-
-    ## Warning: package 'ggpubr' was built under R version 3.6.3
-
-    ## Warning: package 'sf' was built under R version 3.6.3
-
-    ## Linking to GEOS 3.8.0, GDAL 3.0.4, PROJ 6.3.1
-
-``` r
 ################## FUNCTIONS ####################
 # Read Simulations
 ReadSims <- function(dir){
@@ -68,6 +44,13 @@ unfold <- function(Dat, Var){
 }
 ```
 
+Variables from the ‘EC’ folder:
+
+  - *cycle:* time step of the simulation.  
+  - *Infected\_P:* Number of infected pig herds.  
+  - *Infected\_WB:* Number of infected wild Boars.  
+  - *Sim:* Iteration of the simulation.
+
 # Scenario 0: Baseline
 
 ``` r
@@ -92,6 +75,15 @@ S0_I <- S0 %>%
 
 ## Map
 
+Variables from the Agents folder:  
+\- *idhex:* Id of the hexagonal cell.  
+\- *Epidemic:* Number of times that there was an epidemic on that
+polygon.  
+\- *introduction\_ph:* Number of times that an infected pig was
+introduced to the polygon from other polygon.  
+\- *introduction\_wb:* Number of times the disease was transmitted from
+wild boars to a pig herd.
+
 ``` r
 Hx_sim <- ReadSims(dir = "../../Data/Period_1/Sims/S00/Agents/")
 Hx <- st_read("../../Data/Period_1/out/Hx.shp", quiet = T)
@@ -105,16 +97,6 @@ Hx_sim <- Hx_sim %>%
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
   filter(!is.na(Pop)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic))
-```
-
-![](SimsOut_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-``` r
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
@@ -122,51 +104,7 @@ Hx %>%
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
-
-``` r
-Hx_sim %>%
-  arrange(desc(introduction_ph))
-```
-
-    ## # A tibble: 845 x 4
-    ##    idhex Epidemic introduction_ph introduction_wb
-    ##    <chr>    <dbl>           <int>           <int>
-    ##  1 784         24               8              37
-    ##  2 1014         0               0               0
-    ##  3 1015         0               0               0
-    ##  4 1016         0               0               0
-    ##  5 1017         0               0               0
-    ##  6 1018         0               0               0
-    ##  7 1019         0               0               0
-    ##  8 1020         0               0               0
-    ##  9 1021         0               0               0
-    ## 10 1022         0               0               0
-    ## # ... with 835 more rows
-
-``` r
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = introduction_ph))
-```
-
-![](SimsOut_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
-
-``` r
-Hx %>%
-  left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = introduction_wb))
-```
-
-![](SimsOut_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 # Scenario 01: Movement restrictions
 
@@ -179,7 +117,7 @@ P2 <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 ggarrange(P1, P2)
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 S1_I <- S1 %>%
@@ -211,7 +149,7 @@ Hx %>%
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 # Scenario 02: Movement restrictions and hunting pressure
 
@@ -224,7 +162,7 @@ P2 <- PlotCycles(S2, var = "Infected_WB", col = "brown")
 ggarrange(P1, P2)
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 S2_I <- S2 %>%
@@ -241,7 +179,7 @@ rbind(S0_I, S1_I, S2_I) %>%
   geom_boxplot()
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ## Map
 
@@ -264,7 +202,7 @@ Hx %>%
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 # Scenario 03: Movement restrictions, hunting pressure and fencing
 
@@ -277,7 +215,7 @@ P2 <- PlotCycles(S2, var = "Infected_WB", col = "brown")
 ggarrange(P1, P2)
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 S3_I <- S3 %>%
@@ -294,7 +232,7 @@ rbind(S0_I, S1_I, S2_I, S3_I) %>%
   geom_boxplot()
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ## Map
 
@@ -317,4 +255,4 @@ Hx %>%
   geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
 ```
 
-![](SimsOut_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](SimsOut_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
