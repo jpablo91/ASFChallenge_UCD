@@ -96,7 +96,7 @@ Hx_sim <- Hx_sim %>%
 
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
+  # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
@@ -141,7 +141,7 @@ Hx_sim01 <- Hx_sim01 %>%
 
 Hx %>%
   left_join(Hx_sim01, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
+  # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
@@ -194,7 +194,7 @@ Hx_sim02 <- Hx_sim02 %>%
 
 Hx %>%
   left_join(Hx_sim02, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
+  # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
@@ -247,7 +247,7 @@ Hx_sim03 <- Hx_sim03 %>%
 
 Hx %>%
   left_join(Hx_sim03, by = 'idhex') %>%
-  filter(!is.na(Pop)) %>%
+  # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +

@@ -17,14 +17,14 @@ global{
 	 * 0 = Baseline
 	 * 1 = Mov restriction alone
 	 * 2 = Mov restriction and hunting pressure
-	 * 3 = Fencing
+	 * 3 = Fencing 
 	 */
 	int Scenario <- 0; // scenario 0 = baseline, 1 = movement restrictions alone 
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
-	int SimLength <- 50;
+	int SimLength <- 45;
 	
 	//~~~~~~ Disease Parameters ~~~~~~
 	// Pigs
@@ -33,7 +33,7 @@ global{
 	float Infected_P update: Hx sum_of(each.I_P) min: 0.0;
 	float Recovered_P min: 0.0;
 	float Beta_p <- 0.6/step; // Transmission rate for pigs
-	float Gamma_p <- 0.002/step; // Base detection rate
+	float Gamma_p <- 0.001/step; // Base detection rate
 	
 	// Wild Boars
 	//	int Init_I <- 1; // Number of initial infected
@@ -50,7 +50,7 @@ global{
 	bool HuntingPressure;
 	float HuntingEffect <- 0.10;
 	float HuntingPressureSpeed <- 20.0;
-	float AwarenessEffect <- 50.0;
+	float AwarenessEffect <- 5.0;
 	bool Fencing;
 	
 	init{
@@ -78,13 +78,16 @@ global{
 		// Set scenarios
 		if Scenario = 1{
 			MovRestriction <- true;
+			AwarenessEffect <- 10.0;
 		} 
 		if Scenario = 2 {
 			MovRestriction <- true;
+			AwarenessEffect <- 10.0;
 			HuntingPressure <- true;
 		}
 		if Scenario = 3{
 			MovRestriction <- true;
+			AwarenessEffect <- 10.0;
 			HuntingPressure <- true;
 			Fencing <- true;
 		}
@@ -129,6 +132,7 @@ species Hx{
 	int introduction_ph;
 	int introduction_wb;
 	string infection_source;
+	float outdoor;
 	
 	// Pigs Disease parameters
 	float pigherd;
@@ -139,7 +143,7 @@ species Hx{
 	float R_P;
 	rgb Color <- rgb(0, 0, 0, 255);
 	float Export_p;
-	float local_Bp <- dnsty_s/step;
+	float local_Bp <- (dnsty_s*4)/step;
 	float local_gamma_p <- Gamma_p;
 	
 	// WB disease parameters
@@ -215,7 +219,7 @@ species Hx{
 		 // Probability of Wildlife-domestic transmission
 		 float InfectedWB_p <- I_wb/N_wb; // <----- when reducing the number of WB this number goes up??
 		
-		 if flip(0.1){ // if a probability representing the chance of wildlife-domestic contact What value??
+		 if flip(outdoor*2){ // if a probability representing the chance of wildlife-domestic contact What value??
 		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number
 		 	if(Wb_i < I_wb){
 		 		I_P <- I_P + 1;
@@ -272,7 +276,7 @@ experiment main type:gui{
 			chart "SI" type: series{
 				data "Infected Pigs" value:Infected_P color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
-				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
+//				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
 			}
 		}
@@ -281,5 +285,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 50 until: cycle = SimLength{
+experiment Batch type:batch repeat: 20 until: cycle = SimLength{
 }

@@ -441,14 +441,16 @@ Variables:
     -   PT- detection of in a hunted boar.
     -   NT- non-infected hunted boar.
 
-```{r}
+```{r Export the data}
 # Export data:
 Hx %>%
   filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
   mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
     density_s = scales::rescale(x = density, to = c(0.1,0.6)), # Score based on the density
-    WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
-           scales::rescale(x = WBd, to = c(0,.5))) %>%
+     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
+           scales::rescale(x = WBd, to = c(0,.5)), # score based on the forst cover and EB density
+          outdoor = ifelse(is.na(is_otdr ), 0, is_otdr),
+    outdoor = scales::rescale(outdoor, c(0.01, 0.5))) %>%
   write_sf(here("Data/Period_1/out/Hx.shp"))
 ```
 
