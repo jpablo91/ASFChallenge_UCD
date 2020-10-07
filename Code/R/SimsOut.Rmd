@@ -357,8 +357,10 @@ S3_I <- S3 %>%
 ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I) 
 
 p = ScenariosDF %>%
-  ggplot(aes(y=I_P, fill = S)) +
+    ggplot(aes(y=I_P, fill = S)) +
   geom_boxplot() +
+  theme_void()
+    
 
 p
 ```
