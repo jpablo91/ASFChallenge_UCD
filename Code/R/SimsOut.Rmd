@@ -277,7 +277,7 @@ nsims = max(Hx_sim01$Sim)
 m01 = Hx %>%
   left_join(Hx_sim01_summary, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/100,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   PlotMap
 
@@ -299,7 +299,7 @@ nsims = max(Hx_sim03$Sim)
 m02 = Hx %>%
   left_join(Hx_sim02_summary, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
     index_case = ifelse(is.na(cases), NA, 1)) %>%
   PlotMap
 
@@ -321,7 +321,7 @@ nsims = max(Hx_sim03$Sim)
 m03 = Hx %>%
   left_join(Hx_sim03_summary, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   PlotMap
 
