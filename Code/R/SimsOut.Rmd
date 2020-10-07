@@ -3,10 +3,38 @@ title: "Simulations Output"
 output: github_document
 ---
 
-```{r message=F, warning=F}
-library(dplyr); library(ggplot2); library(ggpubr); library(sf)
-################## FUNCTIONS ####################
+
+```{r global_options, include = FALSE}
+
+knitr::opts_chunk$set(fig.width=12,
+                      fig.height=8,
+                      fig.path='../results/figs/test-summary/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+
+options(DT.options = list(pageLength = 100,
+                          dom = 'Bft',
+                          filter = "top",
+                          buttons = c('copy', 'csv')))
+
+```
+
+
+```{r message = FALSE, warning = FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(sf)
+library(here)
+
+out_dir = here("Results/Period_1")
+if(!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+
+# ==============================================================================
+# FUNCTIONS
+# ==============================================================================
+
 # Read Simulations
+# ------------------------------------------------------------------------------
 ReadSims <- function(dir){
   f <- list.files(dir, full.names = TRUE)
   
@@ -17,55 +45,83 @@ ReadSims <- function(dir){
     do.call(rbind, .)
 }
 
+
 # Functions for getting quantiles
-Q25 <- function(x) quantile(x, 0.25)
-Q75 <- function(x) quantile(x, 0.75)
+# ------------------------------------------------------------------------------
+Q25 <- function(sims) quantile(sims, 0.25)
+Q75 <- function(sims) quantile(sims, 0.75)
+
 
 # Function for summarizing the cycles
-CycleSums <- function(x){
-  x %>%
+# ------------------------------------------------------------------------------
+CycleSums <- function(sims){
+  sims %>%
     dplyr::select(-Sim) %>%
     group_by(cycle) %>%
-    summarise_all(.funs = c(median, Q25, Q75))
+    summarise_all(.funs = c(Median = median, Q25 = Q25, Q75 = Q75))
 }
 
+
 # Function for the plots
-PlotCycles <- function(x, var, col){
-  x %>%
+# ------------------------------------------------------------------------------
+PlotCycles <- function(sims, var, col){
+  y_lab = ifelse(grepl("_P", var), "Infected \n pigs", "Infected \n wild boar")
+  sims %>%
     CycleSums() %>%
-    ggplot(aes(x=cycle)) +
-    geom_line(aes(y=eval(parse(text = paste0(var, '_fn1')))), col = col, lwd = 1) +
-    geom_ribbon(aes(ymin=eval(parse(text = paste0(var, '_fn2'))), ymax=eval(parse(text = paste0(var, '_fn3')))), alpha = 0.3, fill = col) +
-    theme_minimal() + ylab(var) +
-    theme(legend.position = "none") 
+    ggplot(aes(x = cycle)) +
+    geom_line(aes(y = eval(parse(text = paste0(var, '_Median')))),
+      col = col, lwd = 1) +
+    geom_ribbon(aes(
+      ymin = eval(parse(text = paste0(var, '_Q25'))),
+      ymax = eval(parse(text = paste0(var, '_Q75')))),
+      alpha = 0.3, fill = col) +
+    theme_minimal() +
+    ylab(y_lab) +
+    xlab("Days") +
+    theme(legend.position = "none",
+      axis.title.y = element_text(angle = 0, vjust = 0.5))
 }
-## Function to convert from long to wide
-# Variable to spread categorical variables
+
+
+# Function to convert from long to wide
+# ------------------------------------------------------------------------------
+## Variable to spread categorical variables
 unfold <- function(Dat, Var){
   Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
 }
+
 ```
   
-  
-Variables from the 'EC' folder:  
+### Variables from the 'EC' folder:  
   
   - *cycle:* time step of the simulation.  
   - *Infected_P:* Number of infected pig herds.  
   - *Infected_WB:* Number of infected wild Boars.  
   - *Sim:* Iteration of the simulation.  
 
+<br><br>
+
 # Scenario 0: Baseline
-
-```{r fig.height=3, fig.width=8}
-S0 <- ReadSims(dir = "../../Data/Period_1/Sims/S00/EC/")
-
-P1 <- PlotCycles(S0, var = "Infected_P", col = "pink2")
-P2 <- PlotCycles(S0, var = "Infected_WB", col = "brown")
-
-ggarrange(P1, P2)
-```
+## Plot of infcted domestic pigs and wild bor over time
 
 ```{r}
+
+S0 <- ReadSims(dir = here("Data/Period_1/Sims/S00/EC/"))
+
+S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
+S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
+
+S0_p = ggarrange(S0_pigs, S0_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n",
+    color = "darkred", face = "bold", size = 14))
+    
+S0_p
+
+ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), S0_p)
+```
+
+
+```{r, eval = FALSE}
 S0_I <- S0 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
@@ -83,8 +139,9 @@ Variables from the Agents folder:
     
     
 ```{r}
-Hx_sim <- ReadSims(dir = "../../Data/Period_1/Sims/S00/Agents/")
-Hx <- st_read("../../Data/Period_1/out/Hx.shp", quiet = T)
+
+Hx_sim <- ReadSims(dir = here("Data/Period_1/Sims/S00/Agents/"))
+Hx <- st_read(here("Data/Period_1/out/Hx.shp"), quiet = TRUE)
 
 Hx_sim <- Hx_sim %>%
   mutate(idhex = as.character(idhex)) %>%
@@ -93,13 +150,16 @@ Hx_sim <- Hx_sim %>%
   summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
 Hx %>%
+  mutate(idhex = as.character(idhex)) %>%
   left_join(Hx_sim, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/80,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
-  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+    geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+    
+
 ```
 
 
