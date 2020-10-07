@@ -18,24 +18,24 @@ Read in data for various scenarios
 
 <br><br>
 
-Plot of infcted domestic pigs and wild bores over time
-======================================================
+Plot of infected domestic pigs and wild boars over time
+=======================================================
 
 ### Scenario 0: Baseline
 
-![](../results/figs/test-summary/unnamed-chunk-3-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-3-1.png)
 
 ### Scenario 01: Movement restrictions
 
-![](../results/figs/test-summary/unnamed-chunk-4-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-4-1.png)
 
 ### Scenario 02: Movement restrictions and hunting pressure
 
-![](../results/figs/test-summary/unnamed-chunk-5-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-5-1.png)
 
 ### Scenario 03: Movement restrictions, hunting pressure and fencing
 
-![](../results/figs/test-summary/unnamed-chunk-6-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-6-1.png)
 
 <br><br>
 
@@ -53,31 +53,42 @@ wild boars to a pig herd.
 
 ### Scenario 0: Baseline
 
-![](../results/figs/test-summary/unnamed-chunk-7-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-7-1.png)
 
 ### Scenario 01: Movement restrictions
 
-![](../results/figs/test-summary/unnamed-chunk-8-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-8-1.png)
 
 ### Scenario 02: Movement restrictions and hunting pressure
 
-![](../results/figs/test-summary/unnamed-chunk-9-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
 ### Scenario 03: Movement restrictions, hunting pressure and fencing
 
-![](../results/figs/test-summary/unnamed-chunk-10-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-10-1.png)
+
+<br><br>
+
+All scenarios together
+======================
+
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-11-1.png)![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-11-2.png)![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/unnamed-chunk-11-3.png)
 
 <br><br>
 
 Summary plot
 ============
 
-![](../results/figs/test-summary/unnamed-chunk-11-1.png)
+![](/Users/nistara/projects/side/2020_ASFChallenge_UCD/Code/R/SimsOut-exported_files/figure-markdown_strict/summary-1.png)
 
     ## # A tibble: 4 x 2
-    ##   S     `median(I_P)`
-    ##   <chr>         <dbl>
-    ## 1 00             16.9
-    ## 2 01             14.5
-    ## 3 02             13.0
-    ## 4 03             11.9
+    ##   S          `median(I_P)`
+    ##   <chr>              <dbl>
+    ## 1 Scenario 0          16.9
+    ## 2 Scenario 1          14.5
+    ## 3 Scenario 2          13.0
+    ## 4 Scenario 3          11.9
+
+    ## [1] 0.2314539
+
+    ## [1] 0.2977669
