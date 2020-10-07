@@ -1,6 +1,11 @@
 ---
 title: "Simulations Output"
-output: github_document
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    theme: cerulean
+    highlight: zenburn
 ---
 
 ```{r global_options, include = FALSE}
@@ -335,20 +340,27 @@ m03
 
 ```{r}
 
-ggarrange(S0_pigs, S1_pigs, S2_pigs, S3_pigs,
-          ncol = 4,
-          common.legend = TRUE,
-          labels = sprintf("Scenario 0%d", 0:3))
+p_pigs = ggarrange(S0_pigs, S1_pigs, S2_pigs, S3_pigs,
+  ncol = 4,
+  common.legend = TRUE,
+  labels = sprintf("Scenario 0%d", 0:3))
+p_pigs
 
-ggarrange(S0_wb, S1_wb, S2_wb, S3_wb,
-          ncol = 4,
-          common.legend = TRUE,
-          labels = sprintf("Scenario 0%d", 0:3))
+p_wb = ggarrange(S0_wb, S1_wb, S2_wb, S3_wb,
+  ncol = 4,
+  common.legend = TRUE,
+  labels = sprintf("Scenario 0%d", 0:3))
+p_wb
 
-ggarrange(m00, m01, m02, m03,
+m_pigs = ggarrange(m00, m01, m02, m03,
   ncol = 2, nrow = 2,
   common.legend = TRUE, legend = "right",
   labels = sprintf("Scenario 0%d", 0:3))
+m_pigs
+
+ggsave(file.path(out_dir, "fig_inf-pigs_all-scenarios.png"), p_pigs)
+ggsave(file.path(out_dir, "fig_inf-wb_all-scenarios.png"), p_wb)
+ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
 
 ```
 
@@ -394,6 +406,8 @@ all_p = ScenariosDF %>%
   ylab("No. of \n Infected pigs")
 
 all_p
+
+ggsave(file.path(out_dir, "fig_box-plots_all-scenarios.png"), all_p)
 
 ```
 
