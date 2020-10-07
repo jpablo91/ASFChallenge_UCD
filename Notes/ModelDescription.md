@@ -18,4 +18,5 @@ A lot of these parameters are very specific to our model approach, *i.e. the loc
 
 
 ## Notes from Kathleen
-- Avg territory size 1.1-3.9 sq km (boitani 1994) wild boar lives in a family party that has a territory of 10 - 20 sq km but in the autumn, family groups come together to form herds of up to 50 females and youngsters.
+- Avg territory size 1.1-3.9 sq km (boitani 1994)
+wild boar lives in a family party that has a territory of 10 - 20 sq km but in the autumn, family groups come together to form herds of up to 50 females and youngsters.  

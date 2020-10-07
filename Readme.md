@@ -1,5 +1,7 @@
 # Repository for sharing code of the ASF Challange.  
 
+## **Report for the first submission is [HERE](Results/Period_1/Results_P1.md)**
+
 Hi all, I updated the repo, there are 3 main files:  
   
   - [Data processing for the period_1](Code/R/Period_1.Rmd): Here I do some processing of the data to obtain te formats required for the model and see some of the distribution of cases.  

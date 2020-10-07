@@ -180,6 +180,7 @@ Hx %>%
   ggplot()+
   geom_sf(aes(fill = E_WB))
 
+  
 plot(WBr)
 ```
 
@@ -205,7 +206,8 @@ crs(LCr) <- projCRS # NR: for me the crs' were already identical
 # Get the unique values to see if worked
 unique(values(LCr))
 ```
-
+  
+  
 Some of the values are not the ones we recoded for (there might be some overlapping of the values due to the resolution used), we can see that the unexpected numbers are just sums of two of the same type, so we will just replace those:
 
 ```{r}
