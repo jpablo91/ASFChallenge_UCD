@@ -1,11 +1,6 @@
 ---
 title: "Simulations Output"
-output:
-  html_document:
-    toc: true
-    toc_depth: 4
-    theme: cerulean
-    highlight: zenburn
+output: github_document
 ---
 
 ```{r global_options, include = FALSE}
