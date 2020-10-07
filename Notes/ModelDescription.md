@@ -20,18 +20,3 @@ A lot of these parameters are very specific to our model approach, *i.e. the loc
 ## Notes from Kathleen
 - Avg territory size 1.1-3.9 sq km (boitani 1994)
 wild boar lives in a family party that has a territory of 10 - 20 sq km but in the autumn, family groups come together to form herds of up to 50 females and youngsters.  
-
-# For the submission
-
-## Short description of the model (stat/mecha, determ/stoch)
-  
-We use a mechanistic stochastic agent based model. We aggregate the population characteristics in a 15 km diameter hexagonal grid where these characteristics describe the local and long-distance disease spread dynamics.  
-The local disease spread is represented by the disease transmission within each hexagonal cell, where each cell has its own SIR model for both the estimated wild boar population and the pig herds.  
-For the long-distance disease spread dynamics we use the land characteristics and estimated wildboar population density to represent the transmission between contiguos cells, and the movement pattterns to represent the transmission between longer distances.  
-This modelling approach allow us to account for the spatial heterogeneity in the transmission dynamics with the assumption the population characteristics within each hexagonal cell are homogeneous.  
-
-## Raw output data with a datadoc to help understand the outputs  
-  
-  
-## Synthetic figures to help interpret quickly the outputs.
-

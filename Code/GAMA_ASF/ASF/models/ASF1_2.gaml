@@ -85,13 +85,13 @@ global{
 		if Scenario = 2 {
 			MovRestriction <- true;
 			AwarenessEffect <- 50.0;
-			HuntingPressure <- true;
+			Fencing <- true;
 		}
 		if Scenario = 3{
 			MovRestriction <- true;
 			AwarenessEffect <- 50.0;
-			HuntingPressure <- true;
 			Fencing <- true;
+			HuntingPressure <- true;
 		}
 	}
 	
