@@ -73,6 +73,10 @@ S0_I <- S0 %>%
 
     ## `summarise()` ungrouping output (override with `.groups` argument)
 
+``` r
+NSims <- nrow(S0_I)
+```
+
 ## Map
 
 Variables from the Agents folder:  
@@ -97,7 +101,7 @@ Hx_sim <- Hx_sim %>%
 Hx %>%
   left_join(Hx_sim, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/80,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/NSims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
@@ -142,7 +146,7 @@ Hx_sim01 <- Hx_sim01 %>%
 Hx %>%
   left_join(Hx_sim01, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/100,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/NSims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
@@ -195,7 +199,7 @@ Hx_sim02 <- Hx_sim02 %>%
 Hx %>%
   left_join(Hx_sim02, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/NSims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
@@ -226,14 +230,6 @@ S3_I <- S3 %>%
 
     ## `summarise()` ungrouping output (override with `.groups` argument)
 
-``` r
-rbind(S0_I, S1_I, S2_I, S3_I) %>%
-  ggplot(aes(y=I_P, fill = S)) +
-  geom_boxplot()
-```
-
-![](SimsOut_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
 ## Map
 
 ``` r
@@ -248,7 +244,7 @@ Hx_sim03 <- Hx_sim03 %>%
 Hx %>%
   left_join(Hx_sim03, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/NSims,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
@@ -256,3 +252,65 @@ Hx %>%
 ```
 
 ![](SimsOut_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+Hx %>%
+  ggplot() + geom_sf() +
+  geom_sf()
+```
+
+![](SimsOut_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
+Hx_sim03 %>%
+  arrange(desc(Epidemic))
+```
+
+    ## # A tibble: 1,190 x 4
+    ##    idhex Epidemic introduction_ph introduction_wb
+    ##    <chr>    <dbl>           <int>           <int>
+    ##  1 591        100               0              31
+    ##  2 623        100               0              10
+    ##  3 625        100               0             114
+    ##  4 589         73               0             138
+    ##  5 627         39               0              43
+    ##  6 663         21               0              22
+    ##  7 515         18               0              22
+    ##  8 587         18               0              18
+    ##  9 660         13               0              16
+    ## 10 701         12               0              13
+    ## # ... with 1,180 more rows
+
+## Conclusion
+
+``` r
+ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I) 
+
+ScenariosDF %>%
+  ggplot(aes(y=I_P, fill = S)) +
+  geom_boxplot()
+```
+
+![](SimsOut_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+``` r
+ScenariosDF %>%
+  group_by(S) %>%
+  summarise(median(I_P))
+```
+
+    ## `summarise()` ungrouping output (override with `.groups` argument)
+
+    ## # A tibble: 4 x 2
+    ##   S     `median(I_P)`
+    ##   <chr>         <dbl>
+    ## 1 00             16.9
+    ## 2 01             14.5
+    ## 3 02             13.0
+    ## 4 03             11.9
+
+``` r
+(16-12)/16
+```
+
+    ## [1] 0.25

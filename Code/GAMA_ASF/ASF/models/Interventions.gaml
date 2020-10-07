@@ -45,6 +45,7 @@ species Fence{
 				if (S_wb + I_wb > (N_wb*0.1)){
 					// Use R compartment to remove the 90% goal from the population
 					local_gamma_wb <- Gamma_wb*HuntingPressureSpeed;
+					in_Fence <- true;
 //					N_wb <- N_wb*HuntingEffect;
 //				S_wb <- S_wb*HuntingEffect;
 //				I_wb <- I_wb*HuntingEffect;
@@ -55,9 +56,10 @@ species Fence{
 		}
 		
 		// Reduce the wildboar movement between cells
-		if Fencing and cycle = 10{
+		if Fencing and cycle > 10{
 			ask Hx at_distance 1#km{
-				p_Adj_Spread <- p_Adj_Spread * 0.1;
+				p_Adj_Spread <- p_Adj_Spread/20;
+//				p_Adj_Spread <- 0.0;
 			}
 		}
 	}

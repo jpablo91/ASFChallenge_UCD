@@ -26,6 +26,7 @@ global{
 	geometry shape <- envelope(Hx_shp);
 	int SimLength <- 45;
 	
+	
 	//~~~~~~ Disease Parameters ~~~~~~
 	// Pigs
 	int Init_I <- 1; // Number of initial infected
@@ -49,13 +50,14 @@ global{
 	bool MovRestriction;
 	bool HuntingPressure;
 	float HuntingEffect <- 0.10;
-	float HuntingPressureSpeed <- 20.0;
-	float AwarenessEffect <- 5.0;
+	float HuntingPressureSpeed <- 40.0;
+	float AwarenessEffect <- 2.0;
 	bool Fencing;
+	
 	
 	init{
 		write 'seed: ' + seed;
-		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass"))]{
+		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass")), dnsty_s::float(read('dnsty_s'))*1.5]{
 			// Contiguous neighbors
 			Nbs_adj <- Hx at_distance 1#m;			
 		}
@@ -78,16 +80,16 @@ global{
 		// Set scenarios
 		if Scenario = 1{
 			MovRestriction <- true;
-			AwarenessEffect <- 10.0;
+			AwarenessEffect <- 50.0;
 		} 
 		if Scenario = 2 {
 			MovRestriction <- true;
-			AwarenessEffect <- 10.0;
+			AwarenessEffect <- 50.0;
 			HuntingPressure <- true;
 		}
 		if Scenario = 3{
 			MovRestriction <- true;
-			AwarenessEffect <- 10.0;
+			AwarenessEffect <- 50.0;
 			HuntingPressure <- true;
 			Fencing <- true;
 		}
@@ -143,8 +145,10 @@ species Hx{
 	float R_P;
 	rgb Color <- rgb(0, 0, 0, 255);
 	float Export_p;
-	float local_Bp <- (dnsty_s*4)/step;
+	float local_Bp <- (dnsty_s)/step;
+//	float local_Bp <- 0.2/step;
 	float local_gamma_p <- Gamma_p;
+	bool is_epidemic;
 	
 	// WB disease parameters
 	float S_wb <- N_wb - I_wb;
@@ -160,6 +164,8 @@ species Hx{
 	bool wb_detected;
 	bool ph_detected;
 	bool movement_restrictions;
+	float WB_Dp <- outdoor*2;
+	bool in_Fence;
 	
 	int Wb_i;
 	
@@ -181,10 +187,11 @@ species Hx{
 		Dest <- one_of(Nbs_trade);
 		Dest.in <- Dest.in + 1;
 		// Exporting a infected pig
-		if flip(Export_p){
+		if flip(Export_p*2){
 			Dest.I_P <- Dest.I_P + 1;
-			introduction_ph <- introduction_ph + 1;
+			Dest.introduction_ph <- Dest.introduction_ph + 1;
 			infection_source <- self.name;
+			write "Long distance transmission " + self.name + "-" + Dest.name + "at:" + cycle;
 		}
 		out <- out + 1;
 	}
@@ -192,9 +199,10 @@ species Hx{
 	//~~~~~~~~~~~~~~~~Pig herds epidemic
 	reflex epidemic_ph when: I_P >0{
 		Disease_status <- "Epidemic";
+		is_epidemic <- true;
 		solve SIR_P method: "Euler" step_size:h;
 		 float CV <- ((I_P - 0) / (25 - 0)) * ((255 - 0) + 0);
-		 Color <- rgb(CV, 0, 0, 255);
+//		 Color <- rgb(CV, 0, 0, 255);
 		 if Pop > 0{
 		 	float Infected_p <- I_P/Pop;
 		 	Export_p <- Infected_p;
@@ -212,14 +220,20 @@ species Hx{
 		 }
 	}
 	
+	reflex UpdateStatus{
+		if I_P > 0{
+			Color <- #red;
+		}
+	}
+	
 	//~~~~~~~~~~~ wild boars epidemic
 	reflex epidemic_wb when: I_wb > 0{
 		solve SIR_WB method: "Euler" step_size:h;
 		
 		 // Probability of Wildlife-domestic transmission
-		 float InfectedWB_p <- I_wb/N_wb; // <----- when reducing the number of WB this number goes up??
+		 float InfectedWB_p <- I_wb/N_wb; //
 		
-		 if flip(outdoor*2){ // Probability of wildlife-domestic contact
+		 if flip(WB_Dp){ // Probability of wildlife-domestic contact
 		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number that represent the index of a animal
 		 	if(Wb_i < I_wb){ // If the index of the animal is > than the number of infeted the disease will be transmitted
 		 		I_P <- I_P + 1;
@@ -239,10 +253,11 @@ species Hx{
 	
 	//Contiguous transmission
 	reflex Local_transmission when: I_wb > 0{
-		if flip(p_Adj_Spread/4){
+		if flip(p_Adj_Spread/2){
 			ask one_of(Nbs_adj){
 				I_wb <- I_wb + 1.0;
 				S_wb <- S_wb - 1.0;
+//				write "Adj Spread" + myself.name + "-" + self.name;
 				}
 			
 		}
@@ -252,6 +267,7 @@ species Hx{
 	//~~~~~~~ Geometry:~~~~~~~~
 	aspect geom{
 		draw shape color: Color border: ph_detected? #blue:#black;
+//		draw shape color: is_epidemic? #red:#black border: ph_detected? #blue:#black;
 	}
 }
 
@@ -265,7 +281,7 @@ experiment main type:gui{
 		}
 		display EpiCurve{
 			chart "SI" type: series{
-				data "Infected Pigs" value:Infected_P color: rgb (231, 124, 124,255);
+				data "Infected Pigs" value:int(Infected_P) color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
 //				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
