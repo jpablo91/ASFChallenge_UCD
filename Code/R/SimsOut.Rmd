@@ -1,8 +1,12 @@
 ---
 title: "Simulations Output"
-output: github_document
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    theme: cerulean
+    highlight: zenburn
 ---
-
 
 ```{r global_options, include = FALSE}
 
@@ -17,8 +21,8 @@ options(DT.options = list(pageLength = 100,
                           buttons = c('copy', 'csv')))
 
 ```
-
-
+	
+# Setting up the workplace
 ```{r message = FALSE, warning = FALSE}
 library(dplyr)
 library(ggplot2)
@@ -64,9 +68,10 @@ CycleSums <- function(sims){
 
 # Function for the plots
 # ------------------------------------------------------------------------------
-PlotCycles <- function(sims, var, col){
+PlotCycles <- function(sims, var, col, y_lim){
   y_lab = ifelse(grepl("_P", var), "Infected \n pigs", "Infected \n wild boar")
-  sims %>%
+
+  p = sims %>%
     CycleSums() %>%
     ggplot(aes(x = cycle)) +
     geom_line(aes(y = eval(parse(text = paste0(var, '_Median')))),
@@ -80,6 +85,11 @@ PlotCycles <- function(sims, var, col){
     xlab("Days") +
     theme(legend.position = "none",
       axis.title.y = element_text(angle = 0, vjust = 0.5))
+
+  if( !missing(y_lim) ) p = p + ylim(y_lim)
+
+  p
+  
 }
 
 
@@ -90,8 +100,57 @@ unfold <- function(Dat, Var){
   Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
 }
 
+
+# Function to make map
+# ------------------------------------------------------------------------------
+PlotMap = function(info) {
+  ggplot(info) +
+  geom_sf(aes(fill = Epidemic), color = "slategrey") +
+  geom_sf(data = st_centroid(subset(Hx, !is.na(cases))), color = "tomato") +
+  theme_void() +
+  labs(fill = "Probability of outbreak") +
+    scale_fill_gradient2(
+      high = "yellow",
+      mid = "darkgoldenrod1", midpoint = 0.25,
+      low = "darkblue",
+      limits=c(0, 0.5))
+
+}
+
+
 ```
-  
+
+# Read in data for various scenarios
+- Scenario 0: Baseline
+- Scenario 01: Movement restrictions
+- Scenario 02: Movement restrictions and hunting pressure
+- Scenario 03: Movement restrictions, hunting pressure and fencing 
+
+
+```{r}
+
+# Orig hexgrid shapefile
+Hx <- st_read(here("Data/Period_1/out/Hx.shp"), quiet = TRUE) %>%
+    mutate(idhex = as.character(idhex))
+
+# scenario 0
+S0 <- ReadSims(dir = here("Data/Period_1/Sims/S00/EC/"))
+Hx_sim00 <- ReadSims(dir = here("Data/Period_1/Sims/S00/Agents/"))
+
+# scenario 1
+S1 <- ReadSims(dir = here("Data/Period_1/Sims/S01/EC/"))
+Hx_sim01 <- ReadSims(dir = here("Data/Period_1/Sims/S01/Agents/"))
+
+# scenario 2
+S2 <- ReadSims(dir = here("Data/Period_1/Sims/S02/EC/"))
+Hx_sim02 <- ReadSims(dir = here("Data/Period_1/Sims/S02/Agents/"))
+
+# scenario 3
+S3 <- ReadSims(dir = here("Data/Period_1/Sims/S03/EC/"))
+Hx_sim03 <- ReadSims(dir = here("Data/Period_1/Sims/S02/Agents/"))
+
+```
+
 ### Variables from the 'EC' folder:  
   
   - *cycle:* time step of the simulation.  
@@ -101,35 +160,79 @@ unfold <- function(Dat, Var){
 
 <br><br>
 
-# Scenario 0: Baseline
-## Plot of infcted domestic pigs and wild bor over time
+
+# Plot of infcted domestic pigs and wild bores over time
+### Scenario 0: Baseline
 
 ```{r}
 
-S0 <- ReadSims(dir = here("Data/Period_1/Sims/S00/EC/"))
-
-S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
+S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
 S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
 
-S0_p = ggarrange(S0_pigs, S0_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n",
+p = ggarrange(S0_pigs, S0_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n",
     color = "darkred", face = "bold", size = 14))
     
-S0_p
+p
 
-ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), S0_p)
+ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
+
 ```
 
+### Scenario 01: Movement restrictions
 
-```{r, eval = FALSE}
-S0_I <- S0 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = '00')
+```{r}
+
+S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
+S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
+
+p = ggarrange(S1_pigs, S1_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Movement restrictions \n",
+    color = "darkred", face = "bold", size = 14))
+    
+p
+
+ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
+
 ```
 
+### Scenario 02: Movement restrictions and hunting pressure
 
-## Map 
+```{r}
+
+S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
+S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown")
+
+p = ggarrange(S2_pigs, S2_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 02: Movement restrictions and hunting pressure \n",
+    color = "darkred", face = "bold", size = 14))
+    
+p
+
+ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p)
+
+```
+
+### Scenario 03: Movement restrictions, hunting pressure and fencing
+
+```{r}
+
+S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
+S3_wb <- PlotCycles(S3, var = "Infected_WB", col = "brown")
+
+p = ggarrange(S3_pigs, S3_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, hunting pressure and fencing \n",
+    color = "darkred", face = "bold", size = 14))
+    
+p
+
+ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
+
+```
+
+<br><br>
+
+# Maps of infected areas 
   
 Variables from the Agents folder:  
   - *idhex:* Id of the hexagonal cell.  
@@ -137,158 +240,131 @@ Variables from the Agents folder:
   - *introduction_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.  
   - *introduction_wb:* Number of times the disease was transmitted from wild boars to a pig herd.  
     
-    
+
+### Scenario 0: Baseline
 ```{r}
 
-Hx_sim <- ReadSims(dir = here("Data/Period_1/Sims/S00/Agents/"))
-Hx <- st_read(here("Data/Period_1/out/Hx.shp"), quiet = TRUE)
-
-Hx_sim <- Hx_sim %>%
+Hx_sim00_summary <- Hx_sim00 %>%
   mutate(idhex = as.character(idhex)) %>%
   unfold(., "Disease_status") %>%
   group_by(idhex) %>%
   summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
-Hx %>%
-  mutate(idhex = as.character(idhex)) %>%
-  left_join(Hx_sim, by = 'idhex') %>%
+nsims = max(Hx_sim00$Sim)
+
+m00 = Hx %>%
+  left_join(Hx_sim00_summary, by = 'idhex') %>%
   # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/80,
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
+    index_case = ifelse(is.na(cases), NA, 1)) %>%
+  PlotMap
+
+m00
+
+```
+
+### Scenario 01: Movement restrictions
+```{r}
+
+Hx_sim01_summary <- Hx_sim01 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+nsims = max(Hx_sim01$Sim)
+
+m01 = Hx %>%
+  left_join(Hx_sim01_summary, by = 'idhex') %>%
+  # filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/100,
          index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic)) +
-    geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
-    
+  PlotMap
+
+m01
 
 ```
 
+### Scenario 02: Movement restrictions and hunting pressure
+```{r}
 
-# Scenario 01: Movement restrictions
+Hx_sim02_summary <- Hx_sim02 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
+nsims = max(Hx_sim03$Sim)
 
-```{r fig.height=3, fig.width=8}
-S1 <- ReadSims(dir = "../../Data/Period_1/Sims/S01/EC/")
+m02 = Hx %>%
+  left_join(Hx_sim02_summary, by = 'idhex') %>%
+  # filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+    index_case = ifelse(is.na(cases), NA, 1)) %>%
+  PlotMap
 
-P1 <- PlotCycles(S1, var = "Infected_P", col = "pink2")
-P2 <- PlotCycles(S1, var = "Infected_WB", col = "brown")
+m02
 
-ggarrange(P1, P2)
 ```
+
+### Scenario 03: Movement restrictions, hunting pressure and fencing
+```{r}
+
+Hx_sim03_summary <- Hx_sim03 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+nsims = max(Hx_sim03$Sim)
+
+m03 = Hx %>%
+  left_join(Hx_sim03_summary, by = 'idhex') %>%
+  # filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  PlotMap
+
+m03
+
+```
+
+<br><br>
+
+# Summary plot
 
 ```{r}
+S0_I <- S0 %>%
+  group_by(Sim) %>%
+  summarise(I_P = max(Infected_P)) %>%
+  mutate(S = '00')
+
 S1_I <- S1 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
   mutate(S = '01')
-```
 
-
-## Map 
-```{r}
-Hx_sim01 <- ReadSims(dir = "../../Data/Period_1/Sims/S01/Agents/")
-
-Hx_sim01 <- Hx_sim01 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-Hx %>%
-  left_join(Hx_sim01, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/100,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic)) +
-  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
-```
-
-# Scenario 02: Movement restrictions and hunting pressure
-
-
-```{r fig.height=3, fig.width=8}
-S2 <- ReadSims(dir = "../../Data/Period_1/Sims/S02/EC/")
-
-P1 <- PlotCycles(S2, var = "Infected_P", col = "pink2")
-P2 <- PlotCycles(S2, var = "Infected_WB", col = "brown")
-
-ggarrange(P1, P2)
-```
-
-```{r}
 S2_I <- S2 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
   mutate(S = '02')
 
-rbind(S0_I, S1_I, S2_I) %>%
-  ggplot(aes(y=I_P, fill = S)) +
-  geom_boxplot()
-```
-
-
-## Map 
-```{r}
-Hx_sim02 <- ReadSims(dir = "../../Data/Period_1/Sims/S02/Agents/")
-
-Hx_sim02 <- Hx_sim02 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-Hx %>%
-  left_join(Hx_sim02, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic)) +
-  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
-```
-
-
-
-# Scenario 03: Movement restrictions, hunting pressure and fencing
-
-
-```{r fig.height=3, fig.width=8}
-S3 <- ReadSims(dir = "../../Data/Period_1/Sims/S03/EC/")
-
-P1 <- PlotCycles(S2, var = "Infected_P", col = "pink2")
-P2 <- PlotCycles(S2, var = "Infected_WB", col = "brown")
-
-ggarrange(P1, P2)
-```
-
-```{r}
 S3_I <- S3 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
   mutate(S = '03')
 
-rbind(S0_I, S1_I, S2_I, S3_I) %>%
+ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I) 
+
+p = ScenariosDF %>%
   ggplot(aes(y=I_P, fill = S)) +
-  geom_boxplot()
+  geom_boxplot() +
+
+p
 ```
 
-
-## Map 
 ```{r}
-Hx_sim03 <- ReadSims(dir = "../../Data/Period_1/Sims/S02/Agents/")
-
-Hx_sim03 <- Hx_sim03 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-Hx %>%
-  left_join(Hx_sim03, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/50,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  ggplot() +
-  geom_sf(aes(fill = Epidemic)) +
-  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+ScenariosDF %>%
+  group_by(S) %>%
+  summarise(median(I_P))
 ```
