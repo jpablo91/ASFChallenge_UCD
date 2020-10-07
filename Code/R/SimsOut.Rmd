@@ -277,14 +277,16 @@ Hx_sim03 <- Hx_sim03 %>%
   group_by(idhex) %>%
   summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
+# New pig herd Cases 
+# NOTE: Changed a little bit the code, I think it would be easier to visualize if we only color in the scale the ones that had at least one case, and fill with red (or could be other color) the ones where the initial pig herd outbreaks happened
 Hx %>%
   left_join(Hx_sim03, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/NSims,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
+         index_case = ifelse(is.na(cases), NA, 1),
+         Epidemic = ifelse(Epidemic == 0, NA, Epidemic)) %>%
   ggplot() +
   geom_sf(aes(fill = Epidemic)) +
-  geom_sf(data = subset(Hx, !is.na(cases)), fill = "red4")
+  geom_sf(data = subset(Hx, ph_cass > 0), fill = "red4")
 ```
 
 
@@ -315,8 +317,18 @@ ScenariosDF %>%
 ```
 
 ```{r}
-(16-12)/16
+## How much does the median decreases depending on the scenarios:
+### Scenario 0 vs 2:
+(16.9092 - 12.9955) / 16.9092
+### Scenario 0 vs 3:
+(16.9092 - 11.8742) / 16.9092
 ```
 
-=======
->>>>>>> 50c037d3b3b45697cb64482422c1d186ea4b0951
+
+```{r}
+# Hx_sim03 %>%
+#   filter(Epidemic != 0) %>%
+#   mutate(pEpidemic = Epidemic/NSims) %>%
+#   arrange(desc(pEpidemic))
+```
+
