@@ -21,15 +21,22 @@ We illustrate the effectiveness of the interventions based on 4 different scenar
 ## Model Results:
 
 ### Number and location of the predicted outbreaks for the next time period.
+The following plot depicts the numbers of pigs infected with ASF under the different scenarios. 
+![](fig_inf-pigs_all-scenarios.png)
+
+
+The following plot depicts the numbers of wild boars infected with ASF under the different scenarios. 
+![](fig_inf-wb_all-scenarios.png)
 
 The following maps predicts the probability that a given hexagonal grid will present a outbreak in the following 45 days:
 
-![](images/unnamed-chunk-13-1.png)
+![](fig_map-inf-pigs_all-scenarios.png)
 
 ### Effectiveness of fencing
 
 The estimated median number of infected pig herds is decreased by 23.14% when the fencing of infected zones is implemented. When we add hunting pressure the estimated median number of infected pig herds decreases by 29.77%
 
-![](images/unnamed-chunk-15-1.png)
+![](fig_box-plots_all-scenarios.png)
 
 ### Conclusion
+In the initial 30 day period of evaluation, we do not see marked differences across the median number of infected populations under the different intervention scenarios.  However, we do observe that with intervention the outliers representing larger size outbreaks are prevented, and in general our confidence in the size, and restriction of the size, of outbreaks improved with intervention.  Given a 30 day window, we may be too early in the timeline to observe significant impacts considering the incubation period for new infections may extend to 15 days.
