@@ -2,7 +2,7 @@
 title: "Simulations Output"
 output:
   html_document:
-    toc: true
+    toc: yes
     toc_depth: 4
     theme: cerulean
     highlight: zenburn
