@@ -1,0 +1,16 @@
+base
+dplyr
+igraph
+tidygraph
+sf
+ggplot2
+sp
+STNet
+raster
+fasterize
+here
+gridExtra
+nngeo
+tidyr
+cowplot
+scales

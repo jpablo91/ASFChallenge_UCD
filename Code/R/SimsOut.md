@@ -1,88 +1,93 @@
 Simulations Output
 ================
 
-### Variables from the ‘EC’ folder:
+Setting up the workplace
+========================
 
-  - *cycle:* time step of the simulation.  
-  - *Infected\_P:* Number of infected pig herds.  
-  - *Infected\_WB:* Number of infected wild Boars.  
-  - *Sim:* Iteration of the simulation.
+Read in data for various scenarios
+==================================
+
+-   Scenario 0: Baseline
+-   Scenario 01: Movement restrictions
+-   Scenario 02: Movement restrictions and hunting pressure
+-   Scenario 03: Movement restrictions, hunting pressure and fencing
+
+### Variables from the 'EC' folder:
+
+-   *cycle:* time step of the simulation.
+-   *Infected\_P:* Number of infected pig herds.
+-   *Infected\_WB:* Number of infected wild Boars.
+-   *Sim:* Iteration of the simulation.
 
 <br><br>
 
-# Scenario 0: Baseline
+Plot of infected domestic pigs and wild boars over time
+=======================================================
 
-## Plot of infcted domestic pigs and wild bor over time
+### Scenario 0: Baseline
 
-![](../results/figs/test-summary/unnamed-chunk-2-1.png)<!-- -->
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
-## Map
+### Scenario 01: Movement restrictions
 
-Variables from the Agents folder:  
-\- *idhex:* Id of the hexagonal cell.  
-\- *Epidemic:* Number of times that there was an epidemic on that
-polygon.  
-\- *introduction\_ph:* Number of times that an infected pig was
-introduced to the polygon from other polygon.  
-\- *introduction\_wb:* Number of times the disease was transmitted from
-wild boars to a pig herd.
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-4-1.png)<!-- -->
+### Scenario 02: Movement restrictions and hunting pressure
 
-# Scenario 01: Movement restrictions
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-5-1.png)<!-- -->
+### Scenario 03: Movement restrictions, hunting pressure and fencing
 
-## Map
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-7-1.png)<!-- -->
+<br><br>
 
-# Scenario 02: Movement restrictions and hunting pressure
+Maps of infected areas
+======================
 
-![](../results/figs/test-summary/unnamed-chunk-8-1.png)<!-- -->
+Variables from the Agents folder:
+- *idhex:* Id of the hexagonal cell.
+- *Epidemic:* Number of times that there was an epidemic on that polygon.
+- *introduction\_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.
+- *introduction\_wb:* Number of times the disease was transmitted from wild boars to a pig herd.
 
-![](../results/figs/test-summary/unnamed-chunk-9-1.png)<!-- -->
+### Scenario 0: Baseline
 
-## Map
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-10-1.png)<!-- -->
+### Scenario 01: Movement restrictions
 
-# Scenario 03: Movement restrictions, hunting pressure and fencing
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-11-1.png)<!-- -->
+### Scenario 02: Movement restrictions and hunting pressure
 
-## Map
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
-![](../results/figs/test-summary/unnamed-chunk-13-1.png)<!-- -->
+### Scenario 03: Movement restrictions, hunting pressure and fencing
 
-![](../results/figs/test-summary/unnamed-chunk-14-1.png)<!-- -->
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
-    ## # A tibble: 1,190 x 4
-    ##    idhex Epidemic introduction_ph introduction_wb
-    ##    <chr>    <dbl>           <int>           <int>
-    ##  1 591        100               0              31
-    ##  2 623        100               0              10
-    ##  3 625        100               0             114
-    ##  4 589         73               0             138
-    ##  5 627         39               0              43
-    ##  6 663         21               0              22
-    ##  7 515         18               0              22
-    ##  8 587         18               0              18
-    ##  9 660         13               0              16
-    ## 10 701         12               0              13
-    ## # … with 1,180 more rows
+<br><br>
 
-## Conclusion
+All scenarios together
+======================
 
-![](../results/figs/test-summary/unnamed-chunk-15-1.png)<!-- -->
+![](SimsOut_files/figure-markdown_github/unnamed-chunk-11-1.png)![](SimsOut_files/figure-markdown_github/unnamed-chunk-11-2.png)![](SimsOut_files/figure-markdown_github/unnamed-chunk-11-3.png)
+
+<br><br>
+
+Summary plot
+============
+
+![](SimsOut_files/figure-markdown_github/summary-1.png)
 
     ## # A tibble: 4 x 2
-    ##   S     `median(I_P)`
-    ##   <chr>         <dbl>
-    ## 1 00             16.9
-    ## 2 01             14.5
-    ## 3 02             13.0
-    ## 4 03             11.9
+    ##   S          `median(I_P)`
+    ##   <chr>              <dbl>
+    ## 1 Scenario 0          16.9
+    ## 2 Scenario 1          14.5
+    ## 3 Scenario 2          13.0
+    ## 4 Scenario 3          11.9
 
     ## [1] 0.2314539
 
