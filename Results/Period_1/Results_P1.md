@@ -15,8 +15,8 @@ We illustrate the effectiveness of the interventions based on 4 different scenar
 
 -   **Scenario 0** assumes that there is no intervention at all after the introduction of the disease.
 -   **Scenario 1** implements the movement restrictions and that there is a increased awareness after detecting the disease in a given hexagonal cell.
--   **Scenario 2** Considers the same interventions as scenario 1, plus the increased hunting pressure in the areas where the disease has been detected, which has a direct effect in the rate at which the wild boars are removed from the population.
--   **Scenario 3** Considers same interventions as precious scenarios plus the implementation of the physical barrier, which has a direct impact in the probability of disease spread between cells via the wild boar populations.
+-   **Scenario 2** Considers the same interventions as scenario 1, plus the implementation of a physical barrier, which has a direct impact in the probability of disease spread between cells via the wild boar populations.  
+-   **Scenario 3** Considers same interventions as previous scenarios plus the increased hunting pressure in the areas where the disease has been detected, which has a direct effect in the rate at which the wild boars are removed from the population.  
 
 Each Scenario was run 100 times and we obtained the median and IQR from the Number of infected farms for the next 45 days.
 

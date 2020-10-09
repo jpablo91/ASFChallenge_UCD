@@ -70,7 +70,7 @@ CycleSums <- function(sims){
 # Function for the plots
 # ------------------------------------------------------------------------------
 PlotCycles <- function(sims, var, col, y_lim){
-  y_lab = ifelse(grepl("_P", var), "Infected \n pigs", "Infected \n wild boar")
+  y_lab = ifelse(grepl("_P", var), "Infected \n pig herds", "Infected \n wild boar")
 
   p = sims %>%
     CycleSums() %>%
@@ -209,7 +209,7 @@ S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
 S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
 
 p = ggarrange(S2_pigs, S2_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 02: Movement restrictions and hunting pressure \n",
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 02: Movement restrictions and fencing \n",
     color = "darkred", face = "bold", size = 14))
     
 p
@@ -226,7 +226,7 @@ S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
 S3_wb <- PlotCycles(S3, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
 
 p = ggarrange(S3_pigs, S3_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, hunting pressure and fencing \n",
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, fencing hunting pressure \n",
     color = "darkred", face = "bold", size = 14))
     
 p
@@ -403,7 +403,7 @@ all_p = ScenariosDF %>%
     axis.title.y = element_text(angle = 0)
   ) +
   xlab("") +
-  ylab("No. of \n Infected pigs")
+  ylab("No. of \n Infected pig herds")
 
 all_p
 
