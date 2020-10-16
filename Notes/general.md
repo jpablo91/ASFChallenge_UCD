@@ -5,7 +5,7 @@ We talked about the code for the period 1, and how we can organize better the fi
 
 #### Symlinking data folder from Box to our project
 - https://apple.stackexchange.com/questions/115646/how-can-i-create-a-symbolic-link-in-terminal
-- https://apple.stackexchange.com/questions/115646/how-can-i-create-a-symbolic-link-in-terminal
+- https://www.howtogeek.com/howto/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/
 - Also, adding `Data*` to the `.gitignore` file ignores these symlinks
 - Going forward we might want to do the same thing for the GAMA related data folders...
 
