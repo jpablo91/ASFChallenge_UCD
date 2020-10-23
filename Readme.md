@@ -28,7 +28,8 @@ The data original data and the data processed for the model can be found in the 
   
 ### Some Links:  
 
-  - [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag)  
+  - [Model Description](Documentation/ModelDescription.md)
+  - [Shared Box Folder](https://ucdavis.box.com/s/c3smpi8zby3qgg70scl5uyq1swl9kxag) 
   - [ASF Challange website](https://www6.inrae.fr/asfchallenge/)  
   - [Zoom link for weekly meeting](https://ucdavis.zoom.us/j/92858469793?pwd=anRsZld0Y01uWWhUTDJSWWQxQXVFUT09)
 
