@@ -19,7 +19,7 @@ Our weekly meeting time is **Fridays 12 pm**
 	|
 	|- Figures: generated figures, maps, etc
 	|
-	|- Report: notes and results for sharing
+	|- Documentation: notes and results for sharing
 
 ### Data:  
 
