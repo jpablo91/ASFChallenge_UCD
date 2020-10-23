@@ -46,10 +46,6 @@ species Fence{
 					// Use R compartment to remove the 90% goal from the population
 					local_gamma_wb <- Gamma_wb*HuntingPressureSpeed;
 					in_Fence <- true;
-//					N_wb <- N_wb*HuntingEffect;
-//				S_wb <- S_wb*HuntingEffect;
-//				I_wb <- I_wb*HuntingEffect;
-//				R_wb <- R_wb*HuntingEffect;	
 				}
 		}
 			
