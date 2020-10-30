@@ -1,0 +1,596 @@
+---
+title: "Period 1"
+---
+
+```{r}
+library(dplyr)
+library(igraph)
+library(tidygraph)
+library(sf)
+library(ggplot2)
+library(sp)
+library(STNet)
+library(raster)
+library(fasterize)
+library(here)
+library(gridExtra)
+library(nngeo)
+library(scales)
+library(cowplot)
+```
+
+# Objectives:
+
+-   Predict the expected number and location of outbreaks detected in farms and wild boars in the next four weeks.
+-   Predict the effectiveness of fencing infected zones.
+-   Advise regarding implementation of the increased hunting pressure in the fenced area.
+
+Deadline: **October 8th, 2020**.
+
+# Data overview:
+
+```{r Create hexagonal grid}
+# Get the CRS that we will use for the data
+projCRS <- shapefile(here("Data/InitialData/Island_ADMIN.shp")) %>% crs()
+
+# Resolution of the grid:
+HxRes <- 15e3
+
+# Read the shapefile
+Is <- sf::read_sf(here("Data/InitialData/Island_ADMIN.shp"))
+
+# explicitly indicate the CRS in sp format to avoid future issues when converting between formats
+st_crs(Is) <- projCRS
+
+# Convert to a field
+Border <- as(raster::extent(Is), "SpatialPolygons") %>%
+  sf::st_as_sf()
+st_crs(Border) <- st_crs(Is)
+
+# Create the grid
+new_hex_grid = function(cellsize, border, orig_shp) {
+  DFsp <- border %>% as("Spatial")
+  HexPts <- sp::spsample(DFsp, type = "hexagonal", offset = c(0, 
+    0), cellsize = cellsize)
+  HexPols <- sp::HexPoints2SpatialPolygons(HexPts)
+  HexPols_sf = st_as_sf(HexPols)
+  
+  hexgrid = st_join(HexPols_sf, orig_shp) %>%
+    filter(!is.na(ID)) %>%
+    rename(orig_shp_ID = ID) %>%
+    mutate(idhex = as.character(seq_len(nrow(.))))
+  return(hexgrid)
+}
+
+BHx <- new_hex_grid(cellsize = HxRes, border = Border, orig_shp = Is)
+
+if(FALSE){
+  # Older version, which returns hexgrids for entire border extent,
+  #   instead of just for the polygon area
+  BHx <- STNet::HexGrid(cellsize = HxRes, Shp = Border)
+  plot(BHx)
+}
+
+ggplot() +
+  # geom_sf(data = border) +
+  geom_sf(data = BHx, aes(fill = orig_shp_ID, col = orig_shp_ID), alpha = 0.7) +
+  geom_sf(data = Is, aes(fill = ID), col = "grey35", alpha = 0.5) +
+  theme_void()
+
+# Note: the ID's aren't sequential - they're like that from the Island data
+BHx$orig_shp_ID = NULL # don't need the orig IDs going forward
+```
+
+## Herds.
+
+```{r}
+herds50 <- read.csv(here("Data/Period_1/herds_day_50.csv"))
+######## Summarize herds ########
+herds50 <- herds50 %>%
+  mutate(N=1) %>%
+  tidyr::spread(production, N) %>% # Convert from long to wide for farm types
+  replace(., is.na(.), 0) # Replace NAs with 0
+
+herdsSp <- herds50 %>%
+  sf::st_as_sf(coords = c("X", "Y"), crs = st_crs(Is)) %>%
+  st_join(BHx)
+
+herdsHx <- herdsSp %>%
+  mutate(N = 1) %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('N', 'size', 'is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F'), .funs = sum) %>%
+  mutate(density = size/ N) %>% # expected animals per farm
+  data.frame() %>%
+  dplyr::select(-geometry) %>%
+  rename(Farms = N, Pop = size)
+
+Hx <- BHx %>%
+  left_join(herdsHx)
+Hx 
+
+## Is there any association between outdoor and commercial??
+# herds50 %>%
+#   count(is_outdoor, is_commercial)
+```
+
+## Movements
+
+```{r}
+Mov <- read.csv(here("Data/Period_1/moves_Players_day_50.csv"))
+
+MovHx <- Mov %>%
+  left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('source' = 'population_id')) %>%
+  rename(sourceHx = idhex) %>%
+  left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('dest' = 'population_id')) %>%
+  rename(destHx = idhex) %>%
+  mutate_at(.vars = c('sourceHx', 'destHx'), .funs = as.character)
+
+# How long was the period observed?
+period_t <- MovHx %>%
+  count(date) %>%
+  nrow()
+
+# Get the probability of movements (long distance) and loops (short distance/internals)
+MovpHx <- MovHx %>%
+  mutate(Mov = 1, loop = ifelse(sourceHx == destHx, 1, 0)) %>%
+  group_by(sourceHx) %>%
+  summarise(Mov = sum(Mov, ma.rm = T), loop = sum(loop), E_animals = median(qty)) %>%
+  mutate(Mov = Mov/period_t, loop = loop/period_t)
+
+# join with the herds dataset
+Hx <- Hx %>%
+  left_join(MovpHx, by = c('idhex' = 'sourceHx'))
+
+
+MovHx %>%
+  mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
+  dplyr::select(ID, sourceHx, destHx) %>%
+  # slice(1:200) %>%
+  write.csv(., here("Data/Period_1/out/MovHx.csv"), row.names = FALSE, quote = FALSE)
+```
+
+# wild boars
+
+```{r, cache = TRUE}
+hunting <- read.csv(here("Data/InitialData/WB_HuntingBag.csv"), sep = ";")
+
+Is <- Is %>% 
+  mutate(ID = as.integer(as.character(ID)), area = st_area(.)) %>%
+  left_join(hunting, by = c("ID" = "ADM")) %>%
+  mutate(WB_dens = HB_2019/area) 
+# Create an empty raster (increaseing the ncol and nrow will give us a better resolution, but will also increase the computation time)
+r <- raster(ncol = 1000, nrow = 1000)
+crs(r) <- crs(Is)
+# Set the extent same as the shapefile
+extent(r) <- extent(Is)
+
+WBr <- fasterize::fasterize(sf = Is, raster = r, field = "WB_dens", fun = "sum")
+# Specify the CRS
+crs(WBr) <- projCRS
+
+Vals <- lapply(seq_len(nrow(Hx)), function(x){
+  mean(raster::extract(WBr, Hx[x,])[[1]], na.rm = TRUE)
+})
+
+Hx <- Hx %>%
+  mutate(WBd = do.call(rbind, Vals), E_WB = (WBd * HxRes) * 1000)
+
+# Compare plots
+Hx %>%
+  ggplot()+
+  geom_sf(aes(fill = E_WB))
+
+  
+plot(WBr)
+```
+
+# Land cover
+
+```{r}
+LC <- st_read(here("Data/Shapefiles/Island_LANDCOVER.shp"))
+```
+
+```{r}
+# Recode the land cover levels to manipulate later
+LC <- LC %>%
+  mutate(LC = recode(LANDCOVER, Agricultural = 1, Forest = 10, Urban = 100))
+```
+
+We will put all the information in a raster so we can then extract and summarize the values per hexagon
+
+```{r}
+# Use the function fasterize to sum the number of N over each pixel of our raster
+LCr <- fasterize::fasterize(sf = LC, raster = r, field = "LC", fun = "sum")
+# Specify the CRS
+crs(LCr) <- projCRS # NR: for me the crs' were already identical
+# Get the unique values to see if worked
+unique(values(LCr))
+```
+  
+  
+Some of the values are not the ones we recoded for (there might be some overlapping of the values due to the resolution used), we can see that the unexpected numbers are just sums of two of the same type, so we will just replace those:
+
+```{r}
+# Replace NAs for 0s
+LCr[is.na(LCr[])] <- 0
+# Replace overlapping raster cells
+LCr[(LCr[] > 1 & LCr[] < 9)] <- 1
+LCr[(LCr[] > 10 & LCr[] < 90)] <- 10
+LCr[(LCr[] > 100 & LCr[] < 900)] <- 100
+# Plot the raster
+plot(LCr)
+```
+
+Now we will summarize the values per hexagon
+
+```{r, cache = TRUE}
+# Updated this code with newer version below
+if(FALSE){
+  # Create empty vectors
+  A_vals <- vector()
+  F_vals <- vector()
+  U_vals <- vector()
+  # Make a loop that will run for each hexagon
+  for(i in 1:nrow(Hx)){
+    # Get the values for each haxagon
+    Vals <- raster::extract(LCr, Hx[i,])
+    # get the proportion of each type of land cover
+    AVals_i <- length(Vals[[1]][Vals[[1]] == 1]) / length(Vals[[1]])
+    FVals_i <- length(Vals[[1]][Vals[[1]] == 10]) / length(Vals[[1]])
+    UVals_i <- length(Vals[[1]][Vals[[1]] == 100]) / length(Vals[[1]])
+    # create vectors with the values:
+    A_vals <- c(A_vals, AVals_i)
+    F_vals <- c(F_vals, FVals_i)
+    U_vals <- c(U_vals, UVals_i)
+  }
+}
+
+# Make a loop that will run for each hexagon
+Vals_l = lapply(seq_len(nrow(Hx)), function(n, Hx, LCr) {
+  Vals <- raster::extract(LCr, Hx[n, ])[[1]]
+}, Hx, LCr)
+
+# get the proportion of each type of land cover
+A_vals = sapply(Vals_l, function(Vals) {
+  sum(Vals == 1) / length(Vals)
+})
+
+F_vals = sapply(Vals_l, function(Vals) {
+  sum(Vals == 10) / length(Vals)
+})
+
+U_vals = sapply(Vals_l, function(Vals) {
+  sum(Vals == 100) / length(Vals)
+})
+
+# Add the values to the Spatial hexagon layer:
+Hx <- Hx %>%
+  mutate(Agricultural = A_vals, Forest = F_vals, Urban = U_vals)
+
+# Plots
+p_urban = Hx %>%
+  ggplot()+
+  geom_sf(aes(fill = Urban)) +
+  scale_fill_gradient(limits = c(0, 1), high = "yellow")
+
+p_forest = Hx %>%
+  ggplot()+
+  geom_sf(aes(fill = Forest)) +
+  scale_fill_gradient(limits = c(0, 1), high = "green")
+
+p_agricultural = Hx %>%
+  ggplot()+
+  geom_sf(aes(fill = Agricultural)) +
+  scale_fill_gradient(limits = c(0, 1), high = "purple")
+
+gridExtra::grid.arrange(p_urban, p_forest, p_agricultural, ncol = 3)
+```
+
+# Cases
+
+Cases comes in two datasets, one for positives and other for negative tests.  
+
+```{r}
+# Variable to spread categorical variables
+unfold <- function(Dat, Var){
+  Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
+}
+```
+
+```{r}
+# For some reason the original st_join method was giving two hex joins for some points
+# Possibly due to points being on the hexagon borders?
+# Ref:  https://stackoverflow.com/questions/51381900/r-overlay-points-and-polygons-with-a-certain-degree-of-tolerance
+
+if(FALSE){
+  # Read the positives
+TSp <- read.csv("../../Data/Period_1/TimeSeries_day_50.csv") %>% 
+  unfold(., "HOST") %>%
+  mutate(Positive = 1) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
+  st_join(BHx) %>% data.frame() %>% 
+  group_by(idhex, DATE.CONF) %>%
+  summarise(cases = sum(Positive), wb_cases = sum(wild.boar), ph_cases = sum(pig.herd))
+}
+
+# Read the positives
+TSp_sf <- read.csv(here("Data/Period_1/TimeSeries_day_50.csv")) %>% 
+  unfold(., "HOST") %>%
+  mutate(Positive = 1) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx))
+
+TSp = st_join(TSp_sf, BHx, join = st_nn) %>%
+  data.frame() %>% 
+  group_by(idhex, DATE.CONF) %>%
+  summarise(cases = sum(Positive), wb_cases = sum(wild.boar), ph_cases = sum(pig.herd))
+
+# How does the cumulative number of cases per grid looks like?
+TSp %>%
+  dplyr::filter(!is.na(DATE.CONF)) %>%
+  group_by(idhex) %>%
+  mutate(cases_cum = cumsum(cases)) %>%
+  ggplot() +
+  geom_line(aes(x=DATE.CONF, y=cases_cum, col = idhex))
+
+ggplot() +
+    geom_sf(data = BHx, fill = "grey") +
+    geom_sf(data = TSp_sf, col = "yellow", size = 0.5)
+
+```
+
+```{r}
+# Add the number of cases to the data
+TSp_s <- TSp %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('cases', 'wb_cases', 'ph_cases'), .funs = sum)
+# Join to the Hx Shapefile
+Hx <- Hx %>%
+  left_join(TSp_s, by = 'idhex')
+# Hx %>%
+#   data.frame() %>%
+#   arrange(desc(wb_cases))
+```
+
+```{r, cache = TRUE}
+
+# Now read the negatives
+TSn_sf <- read.csv(here("Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv")) %>%
+  unfold(., "HOST") %>%
+  mutate(Negative = 1) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx))
+
+TSn = st_join(TSn_sf, BHx, join = st_nn) %>%
+  data.frame() %>% 
+  group_by(idhex, DATE.CONF) %>%
+  summarise(negatives = sum(Negative), wb_cases = sum(wild.boar), ph_cases = 0)
+# The above is hunting data only, with no pig herd cases. Hence setting it to 0.
+
+
+ggplot() +
+  geom_sf(data = BHx, fill = "grey") +
+  geom_sf(data = TSn_sf, col = "blue", size = 0.5) +
+  geom_sf(data = TSp_sf, col = "orange", size = 0.5) +
+  theme_void()
+
+
+if(FALSE){
+  # Now read the negatives
+  TSn <- read.csv(here("Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv")) %>%
+    unfold(., "HOST") %>%
+    mutate(Test = 0) %>%
+    st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
+    st_join(BHx) %>% data.frame() %>%
+    group_by(idhex) %>%
+    summarise(tests = sum(Test), wb_tests = sum(wild.boar)) 
+}
+
+HxDF <- Hx %>%
+  filter(!is.na(Pop)) %>%
+  data.frame()
+
+HxDF %>%
+  arrange(desc(cases))
+
+
+HxDF %>%
+  # mutate(wb_bool = ifelse(Result != 0 & wild.boar != 0, 1, 0)) %>% # For wild boars
+  mutate(wb_bool = ifelse(cases != 0 & ph_cases != 0, 1, 0)) %>% # For pig herds
+  group_by(wb_bool) %>%
+  summarise_at(.vars = c('is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F', 'density', 'Agricultural', 'Forest', 'Urban', 'E_WB'), .funs = mean)
+
+# I exchanged Result for cases and also ph_cases for pig.herd above.
+# Not sure if the above was what was aimed at though
+
+if(FALSE){
+  HxDF %>%
+    # mutate(wb_bool = ifelse(Result != 0 & wild.boar != 0, 1, 0)) %>% # For wild boars
+    mutate(wb_bool = ifelse(Result != 0 & pig.herd != 0, 1, 0)) %>% # For pig herds
+    group_by(wb_bool) %>%
+    summarise_at(.vars = c('is_outdoor', 'is_commercial', 'multisite', 'B', 'BF', 'F', 'density', 'Agricultural', 'Forest', 'Urban', 'E_WB'), .funs = mean)
+}
+
+```
+
+```{r}
+# There's no TS defined in the previous code
+if(FALSE){
+TS %>%
+  tidyr::spread(data = ., HOST, Result)
+
+HxDF %>%
+  filter(pig.herd !=0)
+}
+
+```
+
+# Weighted linear combination
+
+```{r}
+HxDF %>%
+  mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6))) %>%
+  ggplot() + geom_histogram(aes(density_s))
+```
+
+Variables:
+
+-   DET: detection method:
+
+    -   PS- Passive surveillance.
+    -   RZ- Detection in a site from surveillance or protection zone.
+    -   TR- Detection via tracing.
+    -   AS- Wild boar carcass via active searching
+    -   NAS- non-infected carcass via active searching.
+    -   PT- detection of in a hunted boar.
+    -   NT- non-infected hunted boar.
+
+```{r Export the data}
+# Export data:
+Hx %>%
+  filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
+  mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
+    density_s = scales::rescale(x = density, to = c(0.1,0.6)), # Score based on the density
+     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
+           scales::rescale(x = WBd, to = c(0,.5)), # score based on the forst cover and EB density
+          outdoor = ifelse(is.na(is_otdr ), 0, is_otdr),
+    outdoor = scales::rescale(outdoor, c(0.01, 0.5))) %>%
+  write_sf(here("Data/Period_1/out/Hx.shp"))
+```
+
+```{r}
+TSp_s %>%
+  filter(ph_cases != 0)
+Mov %>%
+  filter(source == 785)
+```
+
+Pig cases does not seem to be asociated with movements (very few movements from the affected).\
+wild boar cases on those hexagons are not particularly large
+
+```{r}
+HxDF %>%
+  arrange(desc(wb_cases)) # wild boar cases seem to happen in forest areas
+```
+
+```{r}
+
+# ==============================================================================
+# Bivariate map with cases, agriculture, and forest info
+# ==============================================================================
+# ref: https://timogrossenbacher.ch/2019/04/bivariate-maps-with-ggplot2-and-sf/
+
+df = Hx # just for plotting
+
+# create 3 buckets for forest
+quantiles_forest <- HxDF %>%
+  pull(Forest) %>%
+  quantile(probs = seq(0, 1, length.out = 4))
+
+# create 3 buckets for agriculture
+quantiles_ag <- HxDF %>%
+  pull(Agricultural) %>%
+  quantile(probs = seq(0, 1, length.out = 4))
+
+# create color scale that encodes two variables
+# red for forest and blue for agriculture
+bivariate_color_scale <- tibble(
+  "3 - 3" = "#3F2949", 
+  "2 - 3" = "#435786",
+  "1 - 3" = "#4885C1",
+  "3 - 2" = "#77324C",
+  "2 - 2" = "#806A8A",
+  "1 - 2" = "#89A1C8",
+  "3 - 1" = "#AE3A4E",
+  "2 - 1" = "#BC7C8F",
+  "1 - 1" = "#CABED0" 
+) %>%
+  gather("group", "fill")
+df %<>%
+  mutate(
+    forest_quantiles = cut(
+      Forest,
+      breaks = quantiles_forest,
+      include.lowest = TRUE
+    ),
+    ag_quantiles = cut(
+      Agricultural,
+      breaks = quantiles_ag,
+      include.lowest = TRUE
+    ),
+    group = paste(
+      as.numeric(forest_quantiles), "-",
+      as.numeric(ag_quantiles)
+    )
+  ) %>%
+  left_join(bivariate_color_scale, by = "group")
+
+map <- ggplot(data = df) +
+  geom_sf(aes(fill = fill),
+    color = "white",
+    size = 0.1) +
+  scale_fill_identity() +
+  geom_sf(data = TSp_sf, col = "yellow", size = 0.1, alpha = 0.5) +
+  theme_void()
+
+
+# separate the groups
+bivariate_color_scale %<>%
+  separate(group, into = c("forest", "ag"), sep = " - ") %>%
+  mutate(forest = as.integer(forest),
+         ag = as.integer(ag))
+
+legend <- ggplot() +
+  geom_tile(
+    data = bivariate_color_scale,
+    mapping = aes(
+      x = forest,
+      y = ag,
+      fill = fill)
+  ) +
+  scale_fill_identity() +
+  labs(x = "Higher forest → ",
+       y = "Higher ag →") +
+  theme(
+    axis.title = element_text(size = 6)
+  ) +
+  coord_fixed()
+
+ggdraw() +
+  draw_plot(map, 0, 0, 1, 1) +
+  draw_plot(legend, 0.05, 0.075, 0.2, 0.2, hjust = -3)
+
+
+```
+
+## Interventions
+
+### Containtment barriers.  
+
+Barriers will be implemented as a rectangle whose diagonal is between points (773676.4, 6347189) and (833676.4, 6437189). We expect that the barriers will be active in 10 days (60 days after the detection of the index case).  
+
+```{r}
+# Use the diagonal points to create the square
+fenceSp <- cbind(x = c(833676.4, 773676.4, 773676.4, 833676.4, 833676.4), y = c(6347189, 6347189, 6437189, 6437189, 6347189))
+# Convert to polygon
+fenceSp <- st_polygon(list(fenceSp)) %>%
+  st_geometry()
+# Set the project CRS
+st_crs(fenceSp) <- st_crs(Hx)
+# SHow it in a map
+Hx %>%
+  filter(!is.na(Farms)) %>%
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = fenceSp, alpha = 0.3, col = 'red')
+
+# export the shape:
+fences_shp = list.files(here("Data/Period_1/out"),
+  pattern = "fenceSp", full.names = TRUE)
+
+if(length(fences_shp) > 0) do.call(file.remove, list(fences_shp))
+
+fenceSp %>% st_write(., here("Data/Period_1/out/fenceSp.shp"))
+```
+
+### Increased hunting pressure.  
+
+The goal is to kill about 90% of the alive wild boar within the fenced area, but to test 100%.  
