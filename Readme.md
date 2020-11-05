@@ -25,6 +25,7 @@ Our weekly meeting time is **Fridays 12 pm**
 
 The data original data and the data processed for the model can be found in the shared box folder. The Data provided is on the folders *Data/Initialata* and *Data/Period_1*.  The processed data needed to run the model can be found on the folder *Data/includes*.  
 
+So many sick pigs !!!
   
 ### Some Links:  
 
@@ -41,4 +42,4 @@ Parts of this code use the `STNet` package written by Pablo. To install it:
 remotes::install_github("jpablo91/STNet")
 ```
 
-#I am practicing
+#I am practicing, cause I need to
