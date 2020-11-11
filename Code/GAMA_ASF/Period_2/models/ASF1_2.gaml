@@ -71,10 +71,21 @@ global{
 		// Obtain the neighbors:
 		// Trade Nbs
 		matrix<int> m <- csv_file("../includes/out/MovHx.csv", true) as matrix<int>;
-		loop elt over: rows_list(m){
-			Hx n <- Hx first_with(each.idhex = elt[1]);
-			add (Hx first_with(each.idhex = elt[2])) to: n.Nbs_trade;
+		matrix<int> mc <- csv_file("../includes/out/MovHx_c.csv", true) as matrix<int>;
+		
+		loop i over: rows_list(mc){
+			write "Hx:" + i[0] + "  Nbs:" + i[2];
+//			Hx t <- Hx first_with(each.idhex = i[0]);
+//			write t;
+//			add i[1] to: t.Nbs_t;
+//			t.Nbs_t <- list<int>(i[1]);
 		}
+		
+//		loop elt over: rows_list(m){
+//			Hx n <- Hx first_with(each.idhex = elt[1]);
+//			add (Hx first_with(each.idhex = elt[2])) to: n.Nbs_trade;
+////			add elt[2] to: n.Nbs_t;
+//		}
 		
 		create interventions;
 		// Set scenarios
@@ -125,6 +136,7 @@ species Hx{
 	float Pop;
 	Hx Dest;
 	list<Hx> Nbs_trade;
+	list<int> Nbs_t;
 	list<Hx> Nbs_adj;
 	float E_anmls;
 	float N_wb;

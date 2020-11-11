@@ -7,17 +7,25 @@ Each of the agents in our model has two SIR models, one at the pig herd level an
 
 A lot of these parameters are very specific to our model approach, *i.e. the local spread via wild boars considers the probability that in a given day there will a infected wild boar is going to move or infect another outside a 15 km range, which probably is very dependent on a lot of factors such as the habitat, season, etc..* . It will likely be difficult to find exactly what we are interested in but maybe if we find something close that we can use for provide extra support would be great.
 
-
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | Parameter                                          | Current value | source | Notes                                                         |
-| :------------------------------------------------- | :------------ | :----- | :------------------------------------------------------------ |
++:===================================================+:==============+:=======+:==============================================================+
 | $\beta_{ph}$ Base between herd transmission rate   | (0.1, 0.6)    | None   | Scaled by the population density                              |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\beta_{wb}$ Base wild boars transmission rate     | 0.01          | None   | Scaled by landscape characteristics                           |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\gamma_{wb}$ Base wild boar detection rate        | 0.003         | None   | Scaled by interventions                                       |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\epsilon$ Local spread via wild boars             | 0.3           | None   | Scaled by interventions                                       |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\gamma_{ph}$ Base between herd detection rate     | 0.05          | None   | Scaled by interventions                                       |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | Hunting pressure effect                            | 0.10          | None   | Describes how much reduction in the WB pop after intervention |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | Hunting pressure speed                             | x40           | None   | How much the $\gamma_{wb}$ increases after the intervention   |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\delta$ Probability of domestic-wild boars spread | 0.01-0.5      | None   | Scaled by the number of outdoor farms                         |
++----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 
 ![](Figures/Model.png){width="599"}
 
