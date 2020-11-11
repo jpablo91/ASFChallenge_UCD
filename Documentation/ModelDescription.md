@@ -11,9 +11,13 @@ A lot of these parameters are very specific to our model approach, *i.e. the loc
 | Parameter                                          | Current value | source | Notes                                                         |
 +:===================================================+:==============+:=======+:==============================================================+
 | $\beta_{ph}$ Base between herd transmission rate   | (0.1, 0.6)    | None   | Scaled by the population density                              |
+<<<<<<< HEAD
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\beta_{wb}$ Base wild boars transmission rate     | 0.01          | None   | Scaled by landscape characteristics                           |
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
+=======
+| $\beta_{wb}$ Base wild boars transmission rate     | 0.01          | None   | Scaled by landscape - testing characteristics                           |
+>>>>>>> d5c6541f294b6d218218d5821c176690604c5fce
 | $\gamma_{wb}$ Base wild boar detection rate        | 0.003         | None   | Scaled by interventions                                       |
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\epsilon$ Local spread via wild boars             | 0.3           | None   | Scaled by interventions                                       |

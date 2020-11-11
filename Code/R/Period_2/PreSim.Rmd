@@ -17,6 +17,8 @@ library(gridExtra)
 library(nngeo)
 library(scales)
 library(cowplot)
+
+##I want more packages
 ```
 
 # Objectives:
@@ -43,7 +45,7 @@ Is <- sf::read_sf(here("Data/InitialData/Island_ADMIN.shp"))
 st_crs(Is) <- projCRS
 
 # Convert to a field
-Border <- as(raster::extent(Is), "SpatialPolygons") %>%
+Border <- as(raster::extent(Is), "SpatialPolygonssdsds") %>%
   sf::st_as_sf()
 st_crs(Border) <- st_crs(Is)
 
@@ -84,7 +86,7 @@ BHx$orig_shp_ID = NULL # don't need the orig IDs going forward
 ## Herds.
 
 ```{r}
-herds50 <- read.csv(here("Data/Period_1/herds_day_50.csv"))
+herds50 <- read.csv(here("Datass/Period_1/herds_day_50.csv"))
 ######## Summarize herds ########
 herds50 <- herds50 %>%
   mutate(N=1) %>%
