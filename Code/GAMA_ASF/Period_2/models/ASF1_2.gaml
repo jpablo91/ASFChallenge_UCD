@@ -57,9 +57,22 @@ global{
 	
 	init{
 		write 'seed: ' + seed;
+		// The csv file headers must be without "" marks, i.e. [setosa] not ["setosa"]
+		create Hx_I from:csv_file("../includes/out/MovHx_c.csv", true) with:
+		[i::string(get('sourceHx')), 
+			name::string(get('sourceHx')), 
+			Nb_i::(list<string>(read("Nbs")))
+		]{
+			Nb_i>-first(Nb_i); //Remove first and last element (not sure why is reading with a first element as" '/')
+			Nb_i>-last(Nb_i);
+		}
+		
 		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass")), dnsty_s::float(read('dnsty_s'))*1.5]{
 			// Contiguous neighbors
-			Nbs_adj <- Hx at_distance 1#m;			
+			Nbs_adj <- Hx at_distance 1#m;	
+			// find corresponding Hx_i index
+			Hx_i <- Hx_I first_with(each.i = idhex);			
+					
 		}
 		create Fence from:Fence_shp;
 		// Initial infection:
@@ -73,18 +86,18 @@ global{
 		matrix<int> m <- csv_file("../includes/out/MovHx.csv", true) as matrix<int>;
 		matrix<int> mc <- csv_file("../includes/out/MovHx_c.csv", true) as matrix<int>;
 		
-		loop i over: rows_list(mc){
-			write "Hx:" + i[0] + "  Nbs:" + i[2];
+//		loop i over: rows_list(mc){
+//			write "Hx:" + i[0] + "  Nbs:" + i[3];
 //			Hx t <- Hx first_with(each.idhex = i[0]);
 //			write t;
 //			add i[1] to: t.Nbs_t;
 //			t.Nbs_t <- list<int>(i[1]);
-		}
+//		}
 		
 //		loop elt over: rows_list(m){
 //			Hx n <- Hx first_with(each.idhex = elt[1]);
 //			add (Hx first_with(each.idhex = elt[2])) to: n.Nbs_trade;
-////			add elt[2] to: n.Nbs_t;
+//			add elt[2] to: n.Nbs_t;
 //		}
 		
 		create interventions;
@@ -106,6 +119,7 @@ global{
 		}
 	}
 	
+	
 	reflex Count{
 		Infected_P <- Hx sum_of(each.I_P);
 		Recovered_P <- Hx sum_of(each.R_P);
@@ -125,14 +139,20 @@ global{
 	}
 }
 
+species Hx_I schedules:[]{
+	list<string> Nb_i <- [];
+	string i;
+}
+
 //=====================SPECIES: HEXAGON=====================//
 species Hx{
+	Hx_I Hx_i;
 	//~~~~~~ Population Parameters: ~~~~~~
 	float Farms;
 	float Mov;
 	int out;
 	int in;
-	int idhex;
+	string idhex;
 	float Pop;
 	Hx Dest;
 	list<Hx> Nbs_trade;
@@ -196,7 +216,11 @@ species Hx{
 	} 
 	// Create a shipment
 	action Ship{
-		Dest <- one_of(Nbs_trade);
+		if length(Hx_i.Nb_i) > 0 {
+			string Dest_i <- one_of(Hx_i.Nb_i);
+			Dest <- Hx first_with(each.idhex = Dest_i);
+//			write "Hx :" + name + " to: " + Dest;
+//		Dest <- one_of(Nbs_trade);
 		Dest.in <- Dest.in + 1;
 		// Exporting a infected pig
 		if flip(Export_p*2){
@@ -205,7 +229,9 @@ species Hx{
 			infection_source <- self.name;
 			write "Long distance transmission " + self.name + "-" + Dest.name + "at:" + cycle;
 		}
-		out <- out + 1;
+		out <- out + 1;			
+		}
+		
 	}
 	
 	//~~~~~~~~~~~~~~~~Pig herds epidemic
@@ -304,5 +330,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 100 until: cycle = SimLength{
+experiment Batch type:batch repeat: 50 until: cycle = SimLength{
 }
