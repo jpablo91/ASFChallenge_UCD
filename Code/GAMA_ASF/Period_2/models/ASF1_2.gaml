@@ -219,7 +219,7 @@ species Hx{
 		if length(Hx_i.Nb_i) > 0 {
 			string Dest_i <- one_of(Hx_i.Nb_i);
 			Dest <- Hx first_with(each.idhex = Dest_i);
-//			write "Hx :" + name + " to: " + Dest;
+			write "Hx :" + name + " to: " + Dest;
 //		Dest <- one_of(Nbs_trade);
 		Dest.in <- Dest.in + 1;
 		// Exporting a infected pig

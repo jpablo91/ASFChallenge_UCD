@@ -45,7 +45,7 @@ Is <- sf::read_sf(here("Data/InitialData/Island_ADMIN.shp"))
 st_crs(Is) <- projCRS
 
 # Convert to a field
-Border <- as(raster::extent(Is), "SpatialPolygonssdsds") %>%
+Border <- as(raster::extent(Is), "SpatialPolygons") %>%
   sf::st_as_sf()
 st_crs(Border) <- st_crs(Is)
 
@@ -86,7 +86,7 @@ BHx$orig_shp_ID = NULL # don't need the orig IDs going forward
 ## Herds.
 
 ```{r}
-herds50 <- read.csv(here("Datass/Period_1/herds_day_50.csv"))
+herds50 <- read.csv(here("Data/Period_2/herds_day_80.csv"))
 ######## Summarize herds ########
 herds50 <- herds50 %>%
   mutate(N=1) %>%
@@ -118,7 +118,7 @@ Hx
 ## Movements
 
 ```{r}
-Mov <- read.csv(here("Data/Period_1/moves_Players_day_50.csv"))
+Mov <- read.csv(here("Data/Period_2/moves_Players_day_80.csv"))
 
 MovHx <- Mov %>%
   left_join(data.frame(herdsSp)[c('population_id', 'idhex')], by = c('source' = 'population_id')) %>%
@@ -143,12 +143,23 @@ MovpHx <- MovHx %>%
 Hx <- Hx %>%
   left_join(MovpHx, by = c('idhex' = 'sourceHx'))
 
+# Create table for the movement destinations
+MovHx_c <- lapply(unique(MovHx$sourceHx), function(x){
+  Nbs <- MovHx %>%
+    filter(sourceHx == x) %>%
+    pull(destHx) %>%
+    paste(collapse = ' ')
+  data.frame(sourceHx = x, Nbs)
+}) %>%
+  do.call(rbind, .)
+
+write.csv(MovHx_c, here("Data/Period_2/out/MovHx_c.csv"), row.names = F, quote = F)
 
 MovHx %>%
   mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
   dplyr::select(ID, sourceHx, destHx) %>%
   # slice(1:200) %>%
-  write.csv(., here("Data/Period_1/out/MovHx.csv"), row.names = FALSE, quote = FALSE)
+  write.csv(., here("Data/Period_2/out/MovHx.csv"), row.names = FALSE, quote = FALSE)
 ```
 
 # wild boars
