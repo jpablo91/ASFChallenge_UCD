@@ -36,7 +36,7 @@ Deadline: **October 8th, 2020**.
 projCRS <- shapefile(here("Data/InitialData/Island_ADMIN.shp")) %>% crs()
 
 # Resolution of the grid:
-HxRes <- 15e3
+HxRes <- 5e3
 
 # Read the shapefile
 Is <- sf::read_sf(here("Data/InitialData/Island_ADMIN.shp"))
@@ -153,13 +153,13 @@ MovHx_c <- lapply(unique(MovHx$sourceHx), function(x){
 }) %>%
   do.call(rbind, .)
 
-write.csv(MovHx_c, here("Data/Period_2/out/MovHx_c.csv"), row.names = F, quote = F)
+write.csv(MovHx_c, here(paste0("Data/Period_2/out/MovHx_c-", HxRes ,".csv")), row.names = F, quote = F)
 
 MovHx %>%
   mutate(ID = 1:n(), sourceHx = as.integer(sourceHx), destHx = as.integer(destHx)) %>%
   dplyr::select(ID, sourceHx, destHx) %>%
   # slice(1:200) %>%
-  write.csv(., here("Data/Period_2/out/MovHx.csv"), row.names = FALSE, quote = FALSE)
+  write.csv(., here(paste0("Data/Period_2/out/MovHx-", HxRes, ".csv")), row.names = FALSE, quote = FALSE)
 ```
 
 # wild boars
@@ -365,7 +365,6 @@ Hx <- Hx %>%
 ```
 
 ```{r, cache = TRUE}
-
 # Now read the negatives
 TSn_sf <- read.csv(here("Data/Period_1/TimeSeries_hunt_negative_test_day_50.csv")) %>%
   unfold(., "HOST") %>%
