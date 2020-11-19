@@ -15,13 +15,13 @@ global{
 	/*
 	 * Scenarios:
 	 * 0 = Baseline
-	 * 1 = Mov restriction alone
-	 * 2 = Mov restriction and hunting pressure
-	 * 3 = Fencing 
+	 * 1 = Hunting pressure
+	 * 2 = Protection zones culling
+	 * 3 =  
 	 */
-	int Scenario <- 3;
+	int Scenario <- 2;
 	// Load files:
-	file Hx_shp <- file("../includes/out/Hx.shp");
+	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
 	int SimLength <- 45;
@@ -49,16 +49,18 @@ global{
 	// Interventions
 	bool MovRestriction;
 	bool HuntingPressure;
-	float HuntingEffect <- 0.10;
-	float HuntingPressureSpeed <- 40.0;
-	float AwarenessEffect <- 2.0;
+//	float HuntingEffect <- 0.10;
+	float HuntingPressureSpeed <- 50.0;
+	float AwarenessEffect <- 1.5;
 	bool Fencing;
+	bool PZ_culling; // culling of all pig herds in protection zones (3 km, a.k.a 5 km in our model)
+	bool WBZ_culling; // Culling of pig herds located <3km around detected positive wb carcasses
 	
 	
 	init{
 		write 'seed: ' + seed;
 		// The csv file headers must be without "" marks, i.e. [setosa] not ["setosa"]
-		create Hx_I from:csv_file("../includes/out/MovHx_c.csv", true) with:
+		create Hx_I from:csv_file("../includes/out/MovHx_c-5000.csv", true) with:
 		[i::string(get('sourceHx')), 
 			name::string(get('sourceHx')), 
 			Nb_i::(list<string>(read("Nbs")))
@@ -67,7 +69,7 @@ global{
 			Nb_i>-last(Nb_i);
 		}
 		
-		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cass")), I_wb::int(read("wb_cass")), dnsty_s::float(read('dnsty_s'))*1.5]{
+		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cases")), I_wb::int(read("wb_cases")), dnsty_s::float(read('density_s'))*1.5]{
 			// Contiguous neighbors
 			Nbs_adj <- Hx at_distance 1#m;	
 			// find corresponding Hx_i index
@@ -83,39 +85,27 @@ global{
 		
 		// Obtain the neighbors:
 		// Trade Nbs
-		matrix<int> m <- csv_file("../includes/out/MovHx.csv", true) as matrix<int>;
+//		matrix<int> m <- csv_file("../includes/out/MovHx.csv", true) as matrix<int>;
 		matrix<int> mc <- csv_file("../includes/out/MovHx_c.csv", true) as matrix<int>;
 		
-//		loop i over: rows_list(mc){
-//			write "Hx:" + i[0] + "  Nbs:" + i[3];
-//			Hx t <- Hx first_with(each.idhex = i[0]);
-//			write t;
-//			add i[1] to: t.Nbs_t;
-//			t.Nbs_t <- list<int>(i[1]);
-//		}
-		
-//		loop elt over: rows_list(m){
-//			Hx n <- Hx first_with(each.idhex = elt[1]);
-//			add (Hx first_with(each.idhex = elt[2])) to: n.Nbs_trade;
-//			add elt[2] to: n.Nbs_t;
-//		}
-		
+		// INTERVENTIONS
 		create interventions;
+		Fencing <- true;
+		AwarenessEffect <- 30.0;
+		MovRestriction <- true;
 		// Set scenarios
 		if Scenario = 1{
-			MovRestriction <- true;
-			AwarenessEffect <- 50.0;
+			HuntingPressure <- true;
 		} 
 		if Scenario = 2 {
-			MovRestriction <- true;
-			AwarenessEffect <- 50.0;
-			Fencing <- true;
+			HuntingPressure <- true;
+			// Culling of PH in protection zones
+			PZ_culling <- true;
 		}
 		if Scenario = 3{
-			MovRestriction <- true;
-			AwarenessEffect <- 50.0;
-			Fencing <- true;
 			HuntingPressure <- true;
+			 WBZ_culling <- true;
+			
 		}
 	}
 	
@@ -175,10 +165,10 @@ species Hx{
 	float I_P <- pigherd;
 	float S_P <- Farms - I_P;
 	float R_P;
+	float u_ph; // <- mortality of pig herds (used for the culling speed)
 	rgb Color <- rgb(0, 0, 0, 255);
 	float Export_p;
 	float local_Bp <- (dnsty_s)/step;
-//	float local_Bp <- 0.2/step;
 	float local_gamma_p <- Gamma_p;
 	bool is_epidemic;
 	
@@ -187,6 +177,7 @@ species Hx{
 	float I_wb;
 	float R_wb;
 	float local_gamma_wb <- Gamma_wb;
+	float u_wb; // <- mortality of wild boars (used for the hunting pressure speed)
 	
 	string Disease_status;
 	// interventions
@@ -204,10 +195,18 @@ species Hx{
 	
 	
    	//--------------EQUATIONS--------------//
-	// Using built in equations
-	equation SIR_P type:SIR vars: [S_P,I_P,R_P, t] params: [Farms, local_Bp, local_gamma_p];
-	equation SIR_WB type:SIR vars: [S_wb,I_wb,R_wb, t] params: [N_wb, Beta_wb, Gamma_wb];
-	
+   	// Equation for pig herds
+	 equation SIR_P{
+	 	diff(S_P,t) = (-local_Bp * S_P*I_P/Farms) - (u_ph*S_P);
+	 	diff(I_P,t) = (local_Bp * S_P * I_P / Farms) - (local_gamma_p*I_P) - (u_ph*I_P);
+	 	diff(R_P,t) = (local_gamma_p*I_P) - (u_ph*R_P);
+	}
+	// Equation for wild boars
+	equation SIR_WB{
+	 	diff(S_wb,t) = (-Beta_wb * S_wb*I_wb/N_wb) - (u_wb*S_wb);
+	 	diff(I_wb,t) = (Beta_wb * S_wb * I_wb / N_wb) - (Gamma_wb*I_wb) - (u_wb*I_wb);
+	 	diff(R_wb,t) = (Gamma_wb*I_wb) - (u_wb*R_wb);
+	}
 	
 	//~~~~~~~ Actions:~~~~~~~~
 	// Scale to Action
@@ -219,8 +218,7 @@ species Hx{
 		if length(Hx_i.Nb_i) > 0 {
 			string Dest_i <- one_of(Hx_i.Nb_i);
 			Dest <- Hx first_with(each.idhex = Dest_i);
-			write "Hx :" + name + " to: " + Dest;
-//		Dest <- one_of(Nbs_trade);
+//			write "Hx :" + name + " to: " + Dest;
 		Dest.in <- Dest.in + 1;
 		// Exporting a infected pig
 		if flip(Export_p*2){
@@ -248,10 +246,18 @@ species Hx{
 		 //If detected, the surveillance will increase 10 fold
 		 if (flip(p_detection_ph) and !ph_detected){
 		 	ph_detected <- true;
-		 	local_gamma_p <- Gamma_p*AwarenessEffect;
+		 	local_gamma_p <- Gamma_p*AwarenessEffect; // increased awareness (Vet visits)
+
 		 	write "Detected in " + name + 'at day:' + cycle;
-		 	if MovRestriction{
+		 	if MovRestriction{ // Implement MOVEMENT RESTRICTIONS intervention [protection zone]
 		 		movement_restrictions <- true;
+		 		ask Nbs_adj{ 
+		 			movement_restrictions <- true; // Implement the intervention for the farms < 10 km (adjacent Hx) [surveillance zone]
+		 			local_gamma_p <- Gamma_p*AwarenessEffect; // increased aawareness for surveillance zone
+		 		}
+		 	} 	
+		 	if PZ_culling{
+		 		u_ph <- 0.05/step;
 		 	}
 		 	
 		 	
@@ -321,7 +327,7 @@ experiment main type:gui{
 			chart "SI" type: series{
 				data "Infected Pigs" value:int(Infected_P) color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
-//				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
+				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
 			}
 		}
@@ -330,5 +336,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 50 until: cycle = SimLength{
+experiment Batch type:batch repeat: 15 until: cycle = SimLength{
 }

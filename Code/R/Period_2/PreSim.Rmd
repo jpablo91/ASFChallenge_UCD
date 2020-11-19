@@ -1,5 +1,5 @@
 ---
-title: "Period 1"
+title: "Period 2"
 ---
 
 ```{r}
@@ -50,21 +50,29 @@ Border <- as(raster::extent(Is), "SpatialPolygons") %>%
 st_crs(Border) <- st_crs(Is)
 
 # Create the grid
+# Cells that overlapped two different polygons (admin) were duplicated, edited the function to simplify the original shapefile.
 new_hex_grid = function(cellsize, border, orig_shp) {
+  # cellsize = HxRes; border = Border; orig_shp = Is
+  simple_shp <- orig_shp %>%
+    mutate(i = 1) %>% count(i)
+  
   DFsp <- border %>% as("Spatial")
   HexPts <- sp::spsample(DFsp, type = "hexagonal", offset = c(0, 
     0), cellsize = cellsize)
   HexPols <- sp::HexPoints2SpatialPolygons(HexPts)
   HexPols_sf = st_as_sf(HexPols)
   
-  hexgrid = st_join(HexPols_sf, orig_shp) %>%
-    filter(!is.na(ID)) %>%
-    rename(orig_shp_ID = ID) %>%
-    mutate(idhex = as.character(seq_len(nrow(.))))
+  hexgrid = st_join(HexPols_sf, simple_shp) %>%
+    filter(!is.na(n)) %>%
+    # rename(orig_shp_ID = ID) %>%
+    mutate(idhex = as.character(seq_len(nrow(.)))) %>%
+    select(idhex)
+  
   return(hexgrid)
 }
 
 BHx <- new_hex_grid(cellsize = HxRes, border = Border, orig_shp = Is)
+# st_write(BHx, '../../../Data/Period_2/out/BHx.shp')
 
 if(FALSE){
   # Older version, which returns hexgrids for entire border extent,
@@ -73,14 +81,17 @@ if(FALSE){
   plot(BHx)
 }
 
-ggplot() +
-  # geom_sf(data = border) +
-  geom_sf(data = BHx, aes(fill = orig_shp_ID, col = orig_shp_ID), alpha = 0.7) +
-  geom_sf(data = Is, aes(fill = ID), col = "grey35", alpha = 0.5) +
-  theme_void()
-
-# Note: the ID's aren't sequential - they're like that from the Island data
-BHx$orig_shp_ID = NULL # don't need the orig IDs going forward
+# This plot doesnt work anymore, I dont think we need it
+if(FALSE){
+  ggplot() +
+    # geom_sf(data = border) +
+    geom_sf(data = BHx, aes(fill = orig_shp_ID, col = orig_shp_ID), alpha = 0.7) +
+    geom_sf(data = Is, aes(fill = ID), col = "grey35", alpha = 0.5) +
+    theme_void()
+  
+  # Note: the ID's aren't sequential - they're like that from the Island data
+  BHx$orig_shp_ID = NULL # don't need the orig IDs going forward
+}
 ```
 
 ## Herds.
@@ -299,6 +310,13 @@ p_agricultural = Hx %>%
 gridExtra::grid.arrange(p_urban, p_forest, p_agricultural, ncol = 3)
 ```
 
+```{r}
+# Export the grid before the cases.
+st_write(Hx, "../../../Data/Period_2/out/Hx_LC.shp")
+```
+
+
+
 # Cases
 
 Cases comes in two datasets, one for positives and other for negative tests.  
@@ -310,6 +328,38 @@ unfold <- function(Dat, Var){
 }
 ```
 
+
+```{r}
+TSp_sf2 <- read.csv("../../../Data/Period_2/TimeSeries_day_80_all.csv") %>%
+  unfold(., "HOST") %>%
+  mutate(Positive = 1) %>%
+  st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx))
+
+# TSp_sf2 %>%
+#   st_write("../../../Data/Period_2/out/TSsp.shp")
+
+TSp_sf2 %>%
+  data.frame() %>%
+  arrange(desc(`pig.herd`))
+```
+
+There are some Hx overlapping on the same area (i.e. 3586 and 3587)
+
+```{r}
+## Join with the Hx
+TSp_s <- TSp_sf2 %>%
+  st_join(BHx) %>%
+  data.frame() %>%
+  group_by(idhex) %>%
+  summarise(cases = sum(Positive), wb_cases = sum(wild.boar), ph_cases = sum(pig.herd))
+
+# Join to the Hx Shapefile
+Hx <- Hx %>%
+  select(-c(cases, wb_cass, ph_cass)) %>%
+  left_join(TSp_s, by = 'idhex')
+```
+
+
 ```{r}
 # For some reason the original st_join method was giving two hex joins for some points
 # Possibly due to points being on the hexagon borders?
@@ -317,7 +367,7 @@ unfold <- function(Dat, Var){
 
 if(FALSE){
   # Read the positives
-TSp <- read.csv("../../Data/Period_1/TimeSeries_day_50.csv") %>% 
+TSp <- read.csv("../../../Data/Period_1/TimeSeries_day_50.csv") %>% 
   unfold(., "HOST") %>%
   mutate(Positive = 1) %>%
   st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx)) %>%
@@ -348,7 +398,6 @@ TSp %>%
 ggplot() +
     geom_sf(data = BHx, fill = "grey") +
     geom_sf(data = TSp_sf, col = "yellow", size = 0.5)
-
 ```
 
 ```{r}
@@ -439,7 +488,7 @@ HxDF %>%
 
 ```{r}
 HxDF %>%
-  mutate(density_s = scales::rescale(x = density, to = c(0.1,0.6))) %>%
+  mutate(density_s = scales::rescale(x = density, to = c(0.2,0.6))) %>%
   ggplot() + geom_histogram(aes(density_s))
 ```
 
@@ -460,12 +509,12 @@ Variables:
 Hx %>%
   filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
   mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
-    density_s = scales::rescale(x = density, to = c(0.1,0.6)), # Score based on the density
+    density_s = scales::rescale(x = density, to = c(0.2,0.6)), # Score based on the density
      WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
            scales::rescale(x = WBd, to = c(0,.5)), # score based on the forst cover and EB density
-          outdoor = ifelse(is.na(is_otdr ), 0, is_otdr),
+          outdoor = ifelse(is.na(is_otdr ), 0, is_otdr ),
     outdoor = scales::rescale(outdoor, c(0.01, 0.5))) %>%
-  write_sf(here("Data/Period_1/out/Hx.shp"))
+  write_sf(here(paste0("Data/Period_1/out/Hx_", HxRes, ".shp")))
 ```
 
 ```{r}

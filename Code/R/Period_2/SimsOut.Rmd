@@ -8,6 +8,29 @@ output:
     highlight: zenburn
 ---
 
+Baseline scenario includes:  
+Fence has been active for 20 days so far. Also the increased hunting pressure is been implemented in the fenced area and 15km outside the fenced area.  
+
+i - Fencing
+ii - Hunting pressure
+iii - Awareness
+
+I - Culling of PH in protection zones (3km).  
+II - Increase the size of active search area around infected wild boar carcasses found outside the fenced/buffer areas (from 1km to 2 km).  
+III - Culling of PH < 3 km from detected WB.  
+IV - Increasing size of surveillance zone (10 to 15 km during 30 days).  
+V - Culling of herds that traded with infected farms < 3 weeks before detection
+
+| Scenario | i   | ii  | iii | I   | II  | III | IV  | V   |
+| :------- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| S00      | Y   | N   | Y   | N   | N   | N   | N   | N   |
+| S01      | Y   | Y   | Y   | N   | N   | N   | N   | N   |
+| S02      | Y   | Y   | Y   | Y   | N   | N   | N   | N   |
+| S03      | Y   | Y   | Y   | N   | Y   | N   | N   | N   |
+| S04      | Y   | Y   | Y   | N   | N   | Y   | N   | N   |
+| S05      | Y   | Y   | Y   | N   | N   | N   | Y   | N   |
+| S06      | Y   | Y   | Y   | N   | N   | N   | N   | Y   |
+
 ```{r global_options, include = FALSE}
 
 knitr::opts_chunk$set(fig.width=12,
@@ -31,7 +54,7 @@ library(here)
 library(hrbrthemes)
 library(viridis)
 
-out_dir = here("Results/Period_1")
+out_dir = here("Results/Period_2")
 if(!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
 # ==============================================================================
@@ -110,7 +133,7 @@ PlotMap = function(info) {
 
   ggplot(info) +
     geom_sf(aes(fill = Epidemic), color = "white", lwd = 0.1) +
-    geom_sf(data = st_centroid(subset(Hx, ph_cass > 0)),
+    geom_sf(data = st_centroid(subset(Hx, ph_cases > 0)),
       color = "tomato", size = 1) +
     theme_void() +
     labs(fill = "Probability of outbreak") +
@@ -133,27 +156,25 @@ PlotMap = function(info) {
 
 
 ```{r}
-
-# Orig hexgrid shapefile
-Hx <- st_read(here("Data/Period_1/out/Hx.shp"), quiet = TRUE) %>%
+# # Orig hexgrid shapefile
+Hx <- st_read(here("Data/Period_1/out/Hx_5000.shp"), quiet = TRUE) %>%
     mutate(idhex = as.character(idhex))
 
 # scenario 0
-S0 <- ReadSims(dir = here("Data/Period_1/Sims/S00/EC/"))
-Hx_sim00 <- ReadSims(dir = here("Data/Period_1/Sims/S00/Agents/"))
+S0 <- ReadSims(dir = here("Data/Period_2/Sims/S00/EC/"))
+Hx_sim00 <- ReadSims(dir = here("Data/Period_2/Sims/S00/Agents/"))
 
 # scenario 1
-S1 <- ReadSims(dir = here("Data/Period_1/Sims/S01/EC/"))
-Hx_sim01 <- ReadSims(dir = here("Data/Period_1/Sims/S01/Agents/"))
+S1 <- ReadSims(dir = here("Data/Period_2/Sims/S01/EC/"))
+Hx_sim01 <- ReadSims(dir = here("Data/Period_2/Sims/S01/Agents/"))
 
 # scenario 2
-S2 <- ReadSims(dir = here("Data/Period_1/Sims/S02/EC/"))
-Hx_sim02 <- ReadSims(dir = here("Data/Period_1/Sims/S02/Agents/"))
+S2 <- ReadSims(dir = here("Data/Period_2/Sims/S02/EC/"))
+Hx_sim02 <- ReadSims(dir = here("Data/Period_2/Sims/S02/Agents/"))
 
 # scenario 3
-S3 <- ReadSims(dir = here("Data/Period_1/Sims/S03/EC/"))
-Hx_sim03 <- ReadSims(dir = here("Data/Period_1/Sims/S03/Agents/"))
-
+S3 <- ReadSims(dir = here("Data/Period_2/Sims/S03/EC/"))
+Hx_sim03 <- ReadSims(dir = here("Data/Period_2/Sims/S03/Agents/"))
 ```
 
 ### Variables from the 'EC' folder:  
@@ -171,8 +192,8 @@ Hx_sim03 <- ReadSims(dir = here("Data/Period_1/Sims/S03/Agents/"))
 
 ```{r}
 
-S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
-S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
+S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
+S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
 
 p = ggarrange(S0_pigs, S0_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n",
@@ -180,7 +201,7 @@ p = ggarrange(S0_pigs, S0_wb) %>%
     
 p
 
-ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
+# ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
 
 ```
 
@@ -188,8 +209,8 @@ ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
 
 ```{r}
 
-S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
-S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
+S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
+S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 
 p = ggarrange(S1_pigs, S1_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Movement restrictions \n",
@@ -197,7 +218,7 @@ p = ggarrange(S1_pigs, S1_wb) %>%
     
 p
 
-ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
+# ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
 
 ```
 
@@ -205,8 +226,8 @@ ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
 
 ```{r}
 
-S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
-S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
+S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2")
+S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown")
 
 p = ggarrange(S2_pigs, S2_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 02: Movement restrictions and fencing \n",
@@ -214,16 +235,15 @@ p = ggarrange(S2_pigs, S2_wb) %>%
     
 p
 
-ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p)
+# ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p)
 
 ```
 
 ### Scenario 03: Movement restrictions, hunting pressure and fencing
 
 ```{r}
-
-S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2", y_lim = c(0, 23))
-S3_wb <- PlotCycles(S3, var = "Infected_WB", col = "brown", y_lim = c(400, 750))
+S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2")
+S3_wb <- PlotCycles(S3, var = "Infected_WB", col = "brown")
 
 p = ggarrange(S3_pigs, S3_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, fencing hunting pressure \n",
@@ -231,7 +251,7 @@ p = ggarrange(S3_pigs, S3_wb) %>%
     
 p
 
-ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
+# ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
 
 ```
 
@@ -358,9 +378,9 @@ m_pigs = ggarrange(m00, m01, m02, m03,
   labels = sprintf("Scenario 0%d", 0:3))
 m_pigs
 
-ggsave(file.path(out_dir, "fig_inf-pigs_all-scenarios.png"), p_pigs)
-ggsave(file.path(out_dir, "fig_inf-wb_all-scenarios.png"), p_wb)
-ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
+# ggsave(file.path(out_dir, "fig_inf-pigs_all-scenarios.png"), p_pigs)
+# ggsave(file.path(out_dir, "fig_inf-wb_all-scenarios.png"), p_wb)
+# ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
 
 ```
 
@@ -369,7 +389,6 @@ ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
 # Summary plot
 
 ```{r summary}
-
 S0_I <- S0 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
@@ -408,7 +427,6 @@ all_p = ScenariosDF %>%
 all_p
 
 ggsave(file.path(out_dir, "fig_box-plots_all-scenarios.png"), all_p)
-
 ```
 
 
@@ -436,5 +454,11 @@ ScenariosDF %>%
 (16.9092 - 12.9955) / 16.9092
 ### Scenario 0 vs 3:
 (16.9092 - 11.8742) / 16.9092
-
 ```
+
+```{r}
+(12.25 - 8.53) / 12.25
+
+(12.25 - 8.21) / 12.25
+```
+
