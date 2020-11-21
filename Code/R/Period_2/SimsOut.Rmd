@@ -8,21 +8,27 @@ output:
     highlight: zenburn
 ---
 
-Baseline scenario includes:  
-Fence has been active for 20 days so far. Also the increased hunting pressure is been implemented in the fenced area and 15km outside the fenced area.  
+Baseline scenario includes:\
+Fence has been active for 20 days so far. Also the increased hunting pressure is been implemented in the fenced area and 15km outside the fenced area.
 
-i - Fencing
-ii - Hunting pressure
-iii - Awareness
+-   i - Fencing
 
-I - Culling of PH in protection zones (3km).  
-II - Increase the size of active search area around infected wild boar carcasses found outside the fenced/buffer areas (from 1km to 2 km).  
-III - Culling of PH < 3 km from detected WB.  
-IV - Increasing size of surveillance zone (10 to 15 km during 30 days).  
-V - Culling of herds that traded with infected farms < 3 weeks before detection
+-   ii - Hunting pressure
+
+-   iii - Awareness
+
+-   I - Culling of PH in protection zones (3km).
+
+-   II - Culling of PH \< 3 km from detected WB.
+
+-   III - Increasing size of surveillance zone (10 to 15 km during 30 days).
+
+-   IV - Culling of herds that traded with infected farms \< 3 weeks before detection
+
+-   V - Increase the size of active search area around infected wild boar carcasses found outside the fenced/buffer areas (from 1km to 2 km). (NOT EXPLORED)
 
 | Scenario | i   | ii  | iii | I   | II  | III | IV  | V   |
-| :------- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+|:---------|:----|:----|:----|:----|:----|:----|:----|:----|
 | S00      | Y   | N   | Y   | N   | N   | N   | N   | N   |
 | S01      | Y   | Y   | Y   | N   | N   | N   | N   | N   |
 | S02      | Y   | Y   | Y   | Y   | N   | N   | N   | N   |
@@ -43,8 +49,9 @@ options(DT.options = list(pageLength = 100,
                           buttons = c('copy', 'csv')))
 
 ```
-	
+
 # Setting up the workplace
+
 ```{r message = FALSE, warning = FALSE}
 library(dplyr)
 library(ggplot2)
@@ -149,11 +156,6 @@ PlotMap = function(info) {
 ```
 
 # Read in data for various scenarios
-- Scenario 0: Baseline
-- Scenario 01: Movement restrictions
-- Scenario 02: Movement restrictions and hunting pressure
-- Scenario 03: Movement restrictions, hunting pressure and fencing 
-
 
 ```{r}
 # # Orig hexgrid shapefile
@@ -175,20 +177,32 @@ Hx_sim02 <- ReadSims(dir = here("Data/Period_2/Sims/S02/Agents/"))
 # scenario 3
 S3 <- ReadSims(dir = here("Data/Period_2/Sims/S03/EC/"))
 Hx_sim03 <- ReadSims(dir = here("Data/Period_2/Sims/S03/Agents/"))
+
+# scenario 4
+S4 <- ReadSims(dir = here("Data/Period_2/Sims/S04/EC/"))
+Hx_sim04 <- ReadSims(dir = here("Data/Period_2/Sims/S04/Agents/"))
+
+# scenario 5
+S5 <- ReadSims(dir = here("Data/Period_2/Sims/S05/EC/"))
+Hx_sim05 <- ReadSims(dir = here("Data/Period_2/Sims/S05/Agents/"))
+
+# scenario 5
+# S6 <- ReadSims(dir = here("Data/Period_2/Sims/S06/EC/"))
+# Hx_sim06 <- ReadSims(dir = here("Data/Period_2/Sims/S06/Agents/"))
 ```
 
-### Variables from the 'EC' folder:  
-  
-  - *cycle:* time step of the simulation.  
-  - *Infected_P:* Number of infected pig herds.  
-  - *Infected_WB:* Number of infected wild Boars.  
-  - *Sim:* Iteration of the simulation.  
+### Variables from the 'EC' folder:
+
+-   *cycle:* time step of the simulation.\
+-   *Infected\_P:* Number of infected pig herds.\
+-   *Infected\_WB:* Number of infected wild Boars.\
+-   *Sim:* Iteration of the simulation.
 
 <br><br>
 
-
 # Plot of infected domestic pigs and wild boars over time
-### Scenario 0: Baseline
+
+### Scenario 0: Baseline (fencing, movement restrictions, awareness)
 
 ```{r}
 
@@ -205,7 +219,7 @@ p
 
 ```
 
-### Scenario 01: Movement restrictions
+### Scenario 01: Scenario 0 + hunting pressure
 
 ```{r}
 
@@ -222,7 +236,7 @@ p
 
 ```
 
-### Scenario 02: Movement restrictions and hunting pressure
+### Scenario 02: Scenario 01 + culling of pig herds in surveillance zone
 
 ```{r}
 
@@ -239,7 +253,7 @@ p
 
 ```
 
-### Scenario 03: Movement restrictions, hunting pressure and fencing
+### Scenario 03: Scenario 01 + culling of PH in 15km of positive WB
 
 ```{r}
 S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2")
@@ -255,18 +269,36 @@ p
 
 ```
 
+### Scenario 04: Scenario 01 + increased awareness and movement restrictions from 10km to 15 km
+
+```{r}
+S4_pigs <- PlotCycles(S4, var = "Infected_P", col = "pink2")
+S4_wb <- PlotCycles(S4, var = "Infected_WB", col = "brown")
+
+p = ggarrange(S4_pigs, S4_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, fencing hunting pressure \n",
+    color = "darkred", face = "bold", size = 14))
+    
+p
+
+# ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
+
+```
+
+### Scenario 05: Scenario 01 + contact tracing
+
 <br><br>
 
-# Maps of infected areas 
-  
-Variables from the Agents folder:  
-  - *idhex:* Id of the hexagonal cell.  
-  - *Epidemic:* Number of times that there was an epidemic on that polygon.  
-  - *introduction_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.  
-  - *introduction_wb:* Number of times the disease was transmitted from wild boars to a pig herd.  
-    
+# Maps of infected areas
+
+Variables from the Agents folder:\
+- *idhex:* Id of the hexagonal cell.\
+- *Epidemic:* Number of times that there was an epidemic on that polygon.\
+- *introduction\_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.\
+- *introduction\_wb:* Number of times the disease was transmitted from wild boars to a pig herd.
 
 ### Scenario 0: Baseline
+
 ```{r}
 
 Hx_sim00_summary <- Hx_sim00 %>%
@@ -289,6 +321,7 @@ m00
 ```
 
 ### Scenario 01: Movement restrictions
+
 ```{r}
 
 Hx_sim01_summary <- Hx_sim01 %>%
@@ -310,7 +343,8 @@ m01
 
 ```
 
-### Scenario 02: Movement restrictions and hunting pressure
+### Scenario 02: Culling of pigs in protection zones
+
 ```{r}
 
 Hx_sim02_summary <- Hx_sim02 %>%
@@ -332,7 +366,8 @@ m02
 
 ```
 
-### Scenario 03: Movement restrictions, hunting pressure and fencing
+### Scenario 03: Culling of pigs around wild boar positive
+
 ```{r}
 
 Hx_sim03_summary <- Hx_sim03 %>%
@@ -353,6 +388,54 @@ m03 = Hx %>%
 m03
 
 ```
+
+### Scenario 04: Increased surveillance
+
+```{r}
+
+Hx_sim04_summary <- Hx_sim04 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+nsims = max(Hx_sim04$Sim)
+
+m04 = Hx %>%
+  left_join(Hx_sim04_summary, by = 'idhex') %>%
+  # filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  PlotMap
+
+m04
+
+```
+
+### Scenario 05: Contact tracing
+
+```{r}
+
+Hx_sim05_summary <- Hx_sim05 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  unfold(., "Disease_status") %>%
+  group_by(idhex) %>%
+  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+
+nsims = max(Hx_sim05$Sim)
+
+m05 = Hx %>%
+  left_join(Hx_sim05_summary, by = 'idhex') %>%
+  # filter(!is.na(Pop)) %>%
+  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
+         index_case = ifelse(is.na(cases), NA, 1)) %>%
+  PlotMap
+
+m05
+
+```
+
+
 
 <br><br>
 
@@ -392,24 +475,34 @@ m_pigs
 S0_I <- S0 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Scenario 0')
+  mutate(S = 'Sc 0')
 
 S1_I <- S1 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Scenario 1')
+  mutate(S = 'Sc 1')
 
 S2_I <- S2 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Scenario 2')
+  mutate(S = 'Sc 2')
 
 S3_I <- S3 %>%
   group_by(Sim) %>%
   summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Scenario 3')
+  mutate(S = 'Sc 3')
 
-ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I)
+S4_I <- S4 %>%
+  group_by(Sim) %>%
+  summarise(I_P = max(Infected_P)) %>%
+  mutate(S = 'Sc 4')
+
+S5_I <- S5 %>%
+  group_by(Sim) %>%
+  summarise(I_P = max(Infected_P)) %>%
+  mutate(S = 'Sc 5')
+
+ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I, S4_I, S5_I)
 
 all_p = ScenariosDF %>%
   ggplot( aes(x = S, y = I_P, fill = S)) +
@@ -426,23 +519,22 @@ all_p = ScenariosDF %>%
 
 all_p
 
-ggsave(file.path(out_dir, "fig_box-plots_all-scenarios.png"), all_p)
+# ggsave(file.path(out_dir, "fig_box-plots_all-scenarios.png"), all_p)
 ```
-
 
 ```{r}
 # Export the raw data for submission
 # Merge all the scenarios:
-SDF <- rbind(S0, S1, S2, S3) %>%
-  mutate(Scenario = c(rep("00", 4500), rep("01", 4500), rep('02', 4500), rep('03', 4500)))
+SDF <- rbind(S0, S1, S2, S3, S4, S5) %>%
+  mutate(Scenario = c(rep("00", 4500), rep("01", 4500), rep('02', 4500), rep('03', 4500), rep('04', 4500), rep('05', 4500)))
 # Merge all agents
-AgentsDF <- rbind(Hx_sim00_summary, Hx_sim01_summary, Hx_sim02_summary, Hx_sim03_summary) %>%
-  mutate(Scenario = c(rep("00", 1190), rep("01", 1190), rep('02', 1190), rep('03', 1190)))
+N_Agents <- 6993
+AgentsDF <- rbind(Hx_sim00_summary, Hx_sim01_summary, Hx_sim02_summary, Hx_sim03_summary, Hx_sim04_summary, Hx_sim05_summary) %>%
+  mutate(Scenario = c(rep("00", N_Agents), rep("01", N_Agents), rep('02', N_Agents), rep('03', N_Agents), rep('04', N_Agents), rep('05', N_Agents)))
 
-write.csv(SDF, "../../Data/Period_1/Sims/submission/SDF.csv", row.names = F)
-write.csv(AgentsDF, "../../Data/Period_1/Sims/submission/AgentsDF.csv", row.names = F)
+write.csv(SDF, "../../../Data/Period_2/Sims/submission/SDF.csv", row.names = F)
+write.csv(AgentsDF, "../../../Data/Period_2/Sims/submission/AgentsDF.csv", row.names = F)
 ```
-
 
 ```{r}
 ScenariosDF %>%
@@ -450,15 +542,14 @@ ScenariosDF %>%
   summarise(median(I_P))
 
 ## How much does the median decreases depending on the scenarios:
+### Scenario 0 vs 1:
+(38.97296 - 36.99261) / 38.97296
 ### Scenario 0 vs 2:
-(16.9092 - 12.9955) / 16.9092
+(38.97296 - 29.94144) / 38.97296 # <- the best according to our model
 ### Scenario 0 vs 3:
-(16.9092 - 11.8742) / 16.9092
+(38.97296 - 36.63096) / 38.97296
+### Scenario 0 vs 4:
+(38.97296 - 30.46799) / 38.97296
+### Scenario 0 vs 5:
+(38.97296 - 36.13017) / 38.97296
 ```
-
-```{r}
-(12.25 - 8.53) / 12.25
-
-(12.25 - 8.21) / 12.25
-```
-

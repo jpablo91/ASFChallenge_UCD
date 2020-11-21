@@ -17,9 +17,11 @@ global{
 	 * 0 = Baseline
 	 * 1 = Hunting pressure
 	 * 2 = Protection zones culling
-	 * 3 =  
+	 * 3 =  wild boar culling
+	 * 4 =  increaased surveillance zones
+	 * 5 = contact tracing
 	 */
-	int Scenario <- 2;
+	int Scenario <- 5;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -55,6 +57,8 @@ global{
 	bool Fencing;
 	bool PZ_culling; // culling of all pig herds in protection zones (3 km, a.k.a 5 km in our model)
 	bool WBZ_culling; // Culling of pig herds located <3km around detected positive wb carcasses
+	bool IncreasedSurv; 
+	bool ContactTracing;
 	
 	
 	init{
@@ -72,6 +76,7 @@ global{
 		create Hx from:Hx_shp with:[N_wb::int(read("E_WB"))*9, I_P::int(read("ph_cases")), I_wb::int(read("wb_cases")), dnsty_s::float(read('density_s'))*1.5]{
 			// Contiguous neighbors
 			Nbs_adj <- Hx at_distance 1#m;	
+			Nbs15k <- Hx at_distance 14#km;
 			// find corresponding Hx_i index
 			Hx_i <- Hx_I first_with(each.i = idhex);			
 					
@@ -106,6 +111,14 @@ global{
 			HuntingPressure <- true;
 			 WBZ_culling <- true;
 			
+		}
+		if Scenario = 4{
+			HuntingPressure <- true;
+			IncreasedSurv <- true;
+		}
+		if Scenario = 5{
+			HuntingPressure <- true;
+			ContactTracing <- true;
 		}
 	}
 	
@@ -148,6 +161,7 @@ species Hx{
 	list<Hx> Nbs_trade;
 	list<int> Nbs_t;
 	list<Hx> Nbs_adj;
+	list<Hx> Nbs15k;
 	float E_anmls;
 	float N_wb;
 	float dnsty_s;
@@ -157,6 +171,7 @@ species Hx{
 	int introduction_wb;
 	string infection_source;
 	float outdoor;
+	list<Hx> RecentNbs;
 	
 	// Pigs Disease parameters
 	float pigherd;
@@ -215,11 +230,12 @@ species Hx{
 	} 
 	// Create a shipment
 	action Ship{
-		if length(Hx_i.Nb_i) > 0 {
+		if length(Hx_i.Nb_i) > 0 {			
 			string Dest_i <- one_of(Hx_i.Nb_i);
 			Dest <- Hx first_with(each.idhex = Dest_i);
 //			write "Hx :" + name + " to: " + Dest;
-		Dest.in <- Dest.in + 1;
+			Dest.in <- Dest.in + 1;
+			Dest.RecentNbs <+ self;
 		// Exporting a infected pig
 		if flip(Export_p*2){
 			Dest.I_P <- Dest.I_P + 1;
@@ -251,16 +267,32 @@ species Hx{
 		 	write "Detected in " + name + 'at day:' + cycle;
 		 	if MovRestriction{ // Implement MOVEMENT RESTRICTIONS intervention [protection zone]
 		 		movement_restrictions <- true;
-		 		ask Nbs_adj{ 
+		 		
+		 		// Increased surveillance intervention.
+		 		if IncreasedSurv{// if increased surveillance [Intervention IV] 
+		 				ask Nbs15k{ 
+		 			movement_restrictions <- true; // Implement the intervention for the farms < 15 km (adjacent Hx) [surveillance zone]
+		 			local_gamma_p <- Gamma_p*AwarenessEffect; // increased aawareness for surveillance zone
+		 			}
+		 		} else {
+		 			ask Nbs_adj{ 
 		 			movement_restrictions <- true; // Implement the intervention for the farms < 10 km (adjacent Hx) [surveillance zone]
 		 			local_gamma_p <- Gamma_p*AwarenessEffect; // increased aawareness for surveillance zone
+		 			}
 		 		}
-		 	} 	
+		 	}
+		 	// Contact tracing intervention
+		 	if ContactTracing{
+		 		if length(RecentNbs) > 0{
+		 			ask RecentNbs{
+		 				u_ph <- 0.05/step;
+		 			}
+		 		}
+		 	}
+		 	// Protection zone culling 	
 		 	if PZ_culling{
 		 		u_ph <- 0.05/step;
-		 	}
-		 	
-		 	
+		 	}	
 		 }
 	}
 	
@@ -327,7 +359,7 @@ experiment main type:gui{
 			chart "SI" type: series{
 				data "Infected Pigs" value:int(Infected_P) color: rgb (231, 124, 124,255);
 				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
-				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
+//				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				
 			}
 		}
@@ -336,5 +368,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 15 until: cycle = SimLength{
+experiment Batch type:batch repeat: 100 until: cycle = SimLength{
 }
