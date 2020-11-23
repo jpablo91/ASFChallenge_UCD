@@ -10,13 +10,13 @@
 
 ## Model description
 
-We use a mechanistic stochastic agent based model. We aggregate the population characteristics in a 15 km diameter hexagonal grid and we use these characteristics describe the local and long-distance disease spread dynamics. The local disease spread is represented by the disease transmission within each hexagonal cell, where each cell has its own SIR model for both the estimated wild boar population and the pig herds. The two populations interact based on the farm characteristics and the density of animals within a hexagonal cell.\
-For the long-distance disease spread dynamics we use the land characteristics and estimated wild boar population density to represent the transmission between contiguous cells, and the movement patterns to represent the transmission between longer distances. This modeling approach allow us to account for the spatial heterogeneity in the transmission dynamics with the assumption the population characteristics within each hexagonal cell are homogeneous.
+We use a mechanistic stochastic agent based model. We aggregate the population characteristics in a 15 km diameter hexagonal grid and we use these characteristics to describe the local and long-distance disease spread dynamics. The local disease spread is represented by the disease transmission within each hexagonal cell, where each cell has its own SIR model for both the estimated wild boar population and the pig herds. The two populations interact based on the characteristics of the farms and the density of animals within a hexagonal cell.\
+For the long-distance disease spread dynamics we use the land characteristics and estimated wild boar population density to represent the transmission between contiguous cells, and the movement patterns to represent the transmission between longer distances. This modeling approach allows us to account for the spatial heterogeneity in the transmission dynamics with the assumption that the population characteristics within each hexagonal cell are homogeneous.
 
 We illustrate the effectiveness of the interventions based on 6 different scenarios:
 
 Baseline scenario includes:\
-Fence has been active for 20 days so far. Also the increased hunting pressure is been implemented in the fenced area and 15km outside the fenced area.
+Fence has been active for 20 days so far. Also the increased hunting pressure has been implemented in the fenced area and 15km outside the fenced area.
 
 -   i - Fencing
 
@@ -60,7 +60,7 @@ The following plot shows the distribution of the epidemic peak for the 5 scenari
 
 ### Conclusion
 
-Scenario 2 is the best
+Scenario 2 is the best, followed by scenario 4.
 
 Reduction in cases for each comparison of scenarios made:  
   
