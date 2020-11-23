@@ -61,7 +61,7 @@ library(here)
 library(hrbrthemes)
 library(viridis)
 
-out_dir = here("Results/Period_2")
+out_dir = here("Documentation/Results/Period_2")
 if(!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
 # ==============================================================================
@@ -185,10 +185,6 @@ Hx_sim04 <- ReadSims(dir = here("Data/Period_2/Sims/S04/Agents/"))
 # scenario 5
 S5 <- ReadSims(dir = here("Data/Period_2/Sims/S05/EC/"))
 Hx_sim05 <- ReadSims(dir = here("Data/Period_2/Sims/S05/Agents/"))
-
-# scenario 5
-# S6 <- ReadSims(dir = here("Data/Period_2/Sims/S06/EC/"))
-# Hx_sim06 <- ReadSims(dir = here("Data/Period_2/Sims/S06/Agents/"))
 ```
 
 ### Variables from the 'EC' folder:
@@ -320,7 +316,7 @@ m00
 
 ```
 
-### Scenario 01: Movement restrictions
+### Scenario 01: MHunting pressure
 
 ```{r}
 
@@ -455,15 +451,23 @@ p_wb = ggarrange(S0_wb, S1_wb, S2_wb, S3_wb,
   labels = sprintf("Scenario 0%d", 0:3))
 p_wb
 
-m_pigs = ggarrange(m00, m01, m02, m03,
+m_baseline = ggarrange(m00, m01, 
+                       common.legend = T, legend = 'right',
+                       labels = sprintf('Scenario 0%d', 0:1), heights = 5)
+
+m_pigs = ggarrange(m02, m03, m04, m05,
   ncol = 2, nrow = 2,
   common.legend = TRUE, legend = "right",
-  labels = sprintf("Scenario 0%d", 0:3))
+  labels = sprintf("Scenario 0%d", 2:5))
+
 m_pigs
+
+ggsave(file.path(out_dir, "fig_map-inf-pigsbaseline-scenarios.png"), m_baseline, height = 5)
+ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
 
 # ggsave(file.path(out_dir, "fig_inf-pigs_all-scenarios.png"), p_pigs)
 # ggsave(file.path(out_dir, "fig_inf-wb_all-scenarios.png"), p_wb)
-# ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
+
 
 ```
 
@@ -542,6 +546,7 @@ ScenariosDF %>%
   summarise(median(I_P))
 
 ## How much does the median decreases depending on the scenarios:
+##### Scenario 0
 ### Scenario 0 vs 1:
 (38.97296 - 36.99261) / 38.97296
 ### Scenario 0 vs 2:
@@ -552,4 +557,14 @@ ScenariosDF %>%
 (38.97296 - 30.46799) / 38.97296
 ### Scenario 0 vs 5:
 (38.97296 - 36.13017) / 38.97296
+
+####### Scenario 01
+### Scenario 1 vs 2:
+(36.99261 - 29.94144) / 36.99261
+### Scenario 1 vs 3:
+(36.99261 - 36.63096) / 36.99261
+### Scenario 1 vs 4:
+(36.99261 - 30.46799) / 36.99261
+### Scenario 1 vs 5:
+(36.99261 - 36.13017) / 36.99261
 ```
