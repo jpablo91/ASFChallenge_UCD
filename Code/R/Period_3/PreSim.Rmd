@@ -21,6 +21,14 @@ library(cowplot)
 
 # Objectives:
 
+-  Update the predictions for effectiveness of the fences implemented with or without the increased hunting pressure.  
+-  How likely the epidemic is to fade in the coming four months (day 230)?
+-  Are there any risks to consider for long term?
+  -  Second wave
+  -  Endemicity in wild boar  
+  -  Others?
+-  Suggestions to limit the risk
+-  Should control measures be lifted ofter 230 days?
 
 Deadline: **January 13th, 2021**.
 

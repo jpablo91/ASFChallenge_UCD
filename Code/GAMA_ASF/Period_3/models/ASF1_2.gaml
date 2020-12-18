@@ -21,12 +21,12 @@ global{
 	 * 4 =  increaased surveillance zones
 	 * 5 = contact tracing
 	 */
-	int Scenario <- 5;
+	int Scenario <- 1;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
-	int SimLength <- 45;
+	int SimLength <- 60;
 	
 	
 	//~~~~~~ Disease Parameters ~~~~~~
@@ -120,6 +120,10 @@ global{
 			HuntingPressure <- true;
 			ContactTracing <- true;
 		}
+	}
+	
+	reflex ph_culling_on when: cycle = 10{
+		PZ_culling <- true; //Switch to wildboar culling !!!!!!!!!!!!!!!!!!!!!!!!
 	}
 	
 	
@@ -368,5 +372,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 100 until: cycle = SimLength{
+experiment Batch type:batch repeat: 25 until: cycle = SimLength{
 }
