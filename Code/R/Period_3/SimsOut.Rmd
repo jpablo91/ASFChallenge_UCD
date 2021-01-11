@@ -114,7 +114,7 @@ PlotMap = function(info) {
 
   ggplot(info) +
     geom_sf(aes(fill = Epidemic), color = "white", lwd = 0.1) +
-    geom_sf(data = st_centroid(subset(Hx, ph_cass > 0)),
+    geom_sf(data = st_centroid(subset(Hx, ph_cases > 0)),
       color = "tomato", size = 1) +
     theme_void() +
     labs(fill = "Probability of outbreak") +
@@ -175,6 +175,9 @@ Hx_sim05 <- ReadSims(dir = here("Data/Period_3/Sims/S05/Agents/"))
 ### Scenario 0: Baseline (fencing, movement restrictions, awareness)
 
 ```{r}
+# scenario 0
+S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/"))
+Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
 
 S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
@@ -192,6 +195,9 @@ p
 ### Scenario 01: Scenario 0 + hunting pressure
 
 ```{r}
+# scenario 1
+S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
+Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
 
 S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
@@ -209,6 +215,8 @@ p
 ### Scenario 02: Scenario 01 + culling of pig herds in surveillance zone
 
 ```{r}
+S2 <- ReadSims(dir = here("Data/Period_3/Sims/S02/EC/"))
+Hx_sim02 <- ReadSims(dir = here("Data/Period_3/Sims/S02/Agents/"))
 
 S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2")
 S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown")
@@ -222,40 +230,6 @@ p
 # ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p)
 
 ```
-
-### Scenario 03: Scenario 01 + culling of PH in 15km of positive WB
-
-```{r}
-S3_pigs <- PlotCycles(S3, var = "Infected_P", col = "pink2")
-S3_wb <- PlotCycles(S3, var = "Infected_WB", col = "brown")
-
-p = ggarrange(S3_pigs, S3_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, fencing hunting pressure \n",
-    color = "darkred", face = "bold", size = 14))
-    
-p
-
-# ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
-
-```
-
-### Scenario 04: Scenario 01 + increased awareness and movement restrictions from 10km to 15 km
-
-```{r}
-S4_pigs <- PlotCycles(S4, var = "Infected_P", col = "pink2")
-S4_wb <- PlotCycles(S4, var = "Infected_WB", col = "brown")
-
-p = ggarrange(S4_pigs, S4_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 03: Movement restrictions, fencing hunting pressure \n",
-    color = "darkred", face = "bold", size = 14))
-    
-p
-
-# ggsave(file.path(out_dir, "fig_S3_infected-animals.png"), p)
-
-```
-
-### Scenario 05: Scenario 01 + contact tracing
 
 <br><br>
 
@@ -273,24 +247,29 @@ Variables from the Agents folder:\
 
 Hx_sim00_summary <- Hx_sim00 %>%
   mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
+  unfold(., "Disease_status") %>% 
   group_by(idhex) %>%
   summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
 
 nsims = max(Hx_sim00$Sim)
-
+## all the cases are current outbreaks (index_case variable), so there is an error mapping this
 m00 = Hx %>%
-  left_join(Hx_sim00_summary, by = 'idhex') %>%
+  left_join(Hx_sim00_summary, by = 'idhex') %>% 
   # filter(!is.na(Pop)) %>%
   mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-    index_case = ifelse(is.na(cases), NA, 1)) %>%
+    index_case = ifelse(is.na(cases), NA, 1)) %>% filter(idhex == 2643)
   PlotMap
 
 m00
 
+
+Hx_sim00 %>%
+  filter(cycle == 279, idhex == 2643, Sim == 1)
+  # filter(Disease_status == 'Epidemic')
+  # count(infection_source)
 ```
 
-### Scenario 01: MHunting pressure
+### Scenario 01: Hunting pressure
 
 ```{r}
 
@@ -412,13 +391,13 @@ m05
 
 ```{r}
 
-p_pigs = ggarrange(S0_pigs, S1_pigs, S2_pigs, S3_pigs,
+p_pigs = ggarrange(S0_pigs, S1_pigs, S2_pigs,
   ncol = 4,
   common.legend = TRUE,
   labels = sprintf("Scenario 0%d", 0:3))
 p_pigs
 
-p_wb = ggarrange(S0_wb, S1_wb, S2_wb, S3_wb,
+p_wb = ggarrange(S0_wb, S1_wb, S2_wb,
   ncol = 4,
   common.legend = TRUE,
   labels = sprintf("Scenario 0%d", 0:3))
@@ -464,22 +443,7 @@ S2_I <- S2 %>%
   summarise(I_P = max(Infected_P)) %>%
   mutate(S = 'Sc 2')
 
-S3_I <- S3 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 3')
-
-S4_I <- S4 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 4')
-
-S5_I <- S5 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 5')
-
-ScenariosDF <- rbind(S0_I, S1_I, S2_I, S3_I, S4_I, S5_I)
+ScenariosDF <- rbind(S0_I, S1_I, S2_I)
 
 all_p = ScenariosDF %>%
   ggplot( aes(x = S, y = I_P, fill = S)) +
@@ -502,12 +466,12 @@ all_p
 ```{r}
 # Export the raw data for submission
 # Merge all the scenarios:
-SDF <- rbind(S0, S1, S2, S3, S4, S5) %>%
-  mutate(Scenario = c(rep("00", 4500), rep("01", 4500), rep('02', 4500), rep('03', 4500), rep('04', 4500), rep('05', 4500)))
+SDF <- rbind(S0, S1, S2) %>%
+  mutate(Scenario = c(rep("00", 4200), rep("01", 4200), rep('02', 4200)))
 # Merge all agents
 N_Agents <- 6993
-AgentsDF <- rbind(Hx_sim00_summary, Hx_sim01_summary, Hx_sim02_summary, Hx_sim03_summary, Hx_sim04_summary, Hx_sim05_summary) %>%
-  mutate(Scenario = c(rep("00", N_Agents), rep("01", N_Agents), rep('02', N_Agents), rep('03', N_Agents), rep('04', N_Agents), rep('05', N_Agents)))
+AgentsDF <- rbind(Hx_sim00_summary, Hx_sim01_summary, Hx_sim02_summary) %>%
+  mutate(Scenario = c(rep("00", N_Agents), rep("01", N_Agents), rep('02', N_Agents)))
 
 write.csv(SDF, "../../../Data/Period_2/Sims/submission/SDF.csv", row.names = F)
 write.csv(AgentsDF, "../../../Data/Period_2/Sims/submission/AgentsDF.csv", row.names = F)

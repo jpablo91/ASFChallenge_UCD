@@ -46,16 +46,16 @@ species Fence{
 	
 	// reflexes
 	// Activate the fence
-	reflex BecomeActive when: cycle > 0{
+	reflex BecomeActive when: cycle = 0{
 		is_active <- true;
 		if HuntingPressure{
 			ask Hx at_distance 1#km{
-				if (S_wb + I_wb > (N_wb*0.1)){
+//				if (S_wb + I_wb > (N_wb*0.1)){
 					// Use R compartment to remove the 90% goal from the population
 					local_gamma_wb <- Gamma_wb*HuntingPressureSpeed;
-					u_wb <- 0.005/step;
+					u_wb <- 0.09/step;
 					in_Fence <- true;
-				}
+//				}
 		}
 			
 		}
@@ -63,7 +63,7 @@ species Fence{
 		// Reduce the wildboar movement between cells
 		if Fencing and cycle > 0{
 			ask Hx at_distance 1#km{
-				p_Adj_Spread <- p_Adj_Spread/20; 
+				p_Adj_Spread <- p_Adj_Spread/40; 
 			}
 		}
 	}

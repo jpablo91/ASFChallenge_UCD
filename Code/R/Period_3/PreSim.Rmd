@@ -22,13 +22,13 @@ library(cowplot)
 # Objectives:
 
 -  Update the predictions for effectiveness of the fences implemented with or without the increased hunting pressure.  
--  How likely the epidemic is to fade in the coming four months (day 230)?
+-  How likely the epidemic is to fade in the coming four months (day 240)?
 -  Are there any risks to consider for long term?
   -  Second wave
   -  Endemicity in wild boar  
   -  Others?
 -  Suggestions to limit the risk
--  Should control measures be lifted ofter 230 days?
+-  Should control measures be lifted after 240 days?
 
 Deadline: **January 13th, 2021**.
 
@@ -251,7 +251,7 @@ Now we will summarize the values per hexagon
 if(FALSE){
   # Create empty vectors
   A_vals <- vector()
-  F_vals <- vector()
+  F_vals <- vector() 
   U_vals <- vector()
   # Make a loop that will run for each hexagon
   for(i in 1:nrow(Hx)){
@@ -308,10 +308,14 @@ p_agricultural = Hx %>%
 
 gridExtra::grid.arrange(p_urban, p_forest, p_agricultural, ncol = 3)
 ```
+```{r}
+Hx0 <- Hx
+```
 
 ```{r}
 # Export the grid before the cases.
-st_write(Hx, "../../../Data/Period_3/out/Hx_LC.shp")
+# st_write(Hx, "../../../Data/Period_3/out/Hx_LC.shp")
+Hx <- st_read("../../../Data/Period_3/out/Hx_LC.shp")
 ```
 
 
@@ -319,7 +323,6 @@ st_write(Hx, "../../../Data/Period_3/out/Hx_LC.shp")
 # Cases
 
 Cases comes in two datasets, one for positives and other for negative tests.  
-
 ```{r}
 # Variable to spread categorical variables
 unfold <- function(Dat, Var){
@@ -332,6 +335,7 @@ unfold <- function(Dat, Var){
 TSp_sf2 <- read.csv("../../../Data/Period_3/TimeSeries_day_110_all.csv") %>%
   unfold(., "HOST") %>%
   mutate(Positive = 1) %>%
+  filter(DATE.CONF > 80) %>%
   st_as_sf(., coords = c("X", "Y"), crs = st_crs(BHx))
 
 # TSp_sf2 %>%
@@ -339,12 +343,16 @@ TSp_sf2 <- read.csv("../../../Data/Period_3/TimeSeries_day_110_all.csv") %>%
 
 TSp_sf2 %>%
   data.frame() %>%
+  # filter(DATE.CONF > 80) %>%
+  # count(DET)
+  # mutate()
   arrange(desc(`pig.herd`))
 ```
 
-There are some Hx overlapping on the same area (i.e. 3586 and 3587)
-
 ```{r}
+TSHx <- TSp_sf2 %>%
+  st_join(BHx)
+
 ## Join with the Hx
 TSp_s <- TSp_sf2 %>%
   st_join(BHx) %>%
@@ -357,6 +365,9 @@ Hx <- Hx %>%
   # dplyr::select(-c(cases, wb_cass, ph_cass)) %>%
   left_join(TSp_s, by = 'idhex')
 ```
+
+
+
 
 
 ```{r}
@@ -509,12 +520,19 @@ Hx %>%
   filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
   mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
     density_s = scales::rescale(x = density, to = c(0.2,0.6)), # Score based on the density
-     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forst cover and EB density
+     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forest cover and EB density
            scales::rescale(x = WBd, to = c(0,.5)), # score based on the forst cover and EB density
-          outdoor = ifelse(is.na(is_outdoor  ), 0, is_outdoor  ),
-    outdoor = scales::rescale(outdoor, c(0.01, 0.5))) %>%
-  write_sf(here(paste0("Data/Period_3/out/Hx_", HxRes, ".shp")))
+          outdoor = ifelse(is.na(is_otdr  ), 0, is_otdr  ),
+    outdoor = scales::rescale(outdoor, c(0.01, 0.5)),
+    WBd = scales::rescale(WBd, to = c(0.05, 0.25)),) %>%
+  write_sf(here(paste0("Data/Period_3/out/Test/Hx_", HxRes, ".shp")))
 ```
+
+```{r}
+Hx %>%
+  filter(wb_cases > 0)
+```
+
 
 ```{r}
 TSp_s %>%
