@@ -21,12 +21,12 @@ global{
 	 * 4 =  increaased surveillance zones
 	 * 5 = contact tracing
 	 */
-	int Scenario <- 2;
+	int Scenario <- 0;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
 	geometry shape <- envelope(Hx_shp);
-	int SimLength <- 280;
+	int SimLength <- 260;
 	
 	
 	//~~~~~~ Disease Parameters ~~~~~~
@@ -35,7 +35,7 @@ global{
 	float Susceptible_P min: 0.0;
 	float Infected_P update: Hx sum_of(each.I_P) min: 0.0;
 	float Death_P;
-	float Recovered_P min: 0.0;
+	float Removed_P min: 0.0;
 	float Beta_p <- 0.6/step; // Transmission rate for pigs
 	float Gamma_p <- 0.005/step; // Base detection rate
 	
@@ -44,7 +44,8 @@ global{
 	float Susceptible_WB update: float(Hx sum_of(each.S_wb));
 	float Infected_WB update: float(Hx sum_of(each.I_wb));
 	float Recovered_WB;
-	float Beta_wb <- 0.01/step; // Transmission rate for wild boars
+	float Hunted_WB;
+	float Beta_wb <- 0.001/step; // Transmission rate for wild boars
 	float Gamma_wb <- 0.001/step; 
 	float Transmission_d;
 	float AdjSpreadWB_p <- 0.3; // probability of adjacent spread via WB
@@ -60,6 +61,7 @@ global{
 	bool WBZ_culling; // Culling of pig herds located <3km around detected positive wb carcasses
 	bool IncreasedSurv; 
 	bool ContactTracing;
+	int Repopulation_t <- 60;
 	
 	
 	init{
@@ -92,7 +94,6 @@ global{
 		
 		// Obtain the neighbors:
 		// Trade Nbs
-//		matrix<int> m <- csv_file("../includes/out/MovHx.csv", true) as matrix<int>;
 		matrix<int> mc <- csv_file("../includes/out/MovHx_c.csv", true) as matrix<int>;
 		
 		// INTERVENTIONS
@@ -100,14 +101,15 @@ global{
 		Fencing <- true;
 		AwarenessEffect <- 30.0;
 		MovRestriction <- true;
+		WBZ_culling <- true;
 		// Set scenarios
 		if Scenario = 1{
 			HuntingPressure <- true;
-			 WBZ_culling <- true;
+//			 WBZ_culling <- true;
 		} 
 		if Scenario = 2 {
 			HuntingPressure <- true;
-			 WBZ_culling <- true;
+//			 WBZ_culling <- true;
 		}
 		if Scenario = 3{
 			HuntingPressure <- true;
@@ -131,14 +133,15 @@ global{
 	
 	reflex Count{
 		Infected_P <- Hx sum_of(each.I_P);
-		Recovered_P <- Hx sum_of(each.R_P);
+		Removed_P <- Hx sum_of(each.R_P);
 		Death_P <- Hx sum_of(each.D_P);
+		Hunted_WB <- Hx sum_of(each.H_wb);
 		//Export results
 		save [cycle, Infected_P, Infected_WB] to: "../results//EC/EpiCurve" + int(self) + seed +".csv" type:"csv" rewrite:false;
 		
 		if cycle = (SimLength - 1){
 				ask Hx{
-					save[cycle, idhex, Disease_status, introduction_ph, introduction_wb, infection_source] to: "../results/Agents/Hx" + int(myself) + ".csv" type:csv rewrite:false;
+					save[cycle, idhex, Disease_status, reintroduction, introduction_ph, introduction_wb, infection_source] to: "../results/Agents/Hx" + int(myself) + ".csv" type:csv rewrite:false;
 				}
 			}
 		
@@ -180,6 +183,9 @@ species Hx{
 	string infection_source;
 	float outdoor;
 	list<Hx> RecentNbs;
+	// Reintroduction
+	int disease_free_t;
+	int reintroduction;
 	
 	// Pigs Disease parameters
 	float pigherd;
@@ -189,7 +195,7 @@ species Hx{
 	float S_P <- Farms - I_P;
 	float R_P;
 	float D_P;
-	float u_ph; // <- mortality of pig herds (used for the culling speed)
+	float u_ph; // <- culling rate for pig herds
 	rgb Color <- rgb(0, 0, 0, 255);
 	float Export_p;
 	float local_Bp <- (dnsty_s)/step;
@@ -202,6 +208,7 @@ species Hx{
 	float R_wb;
 	float local_gamma_wb <- Gamma_wb;
 	float u_wb; // <- mortality of wild boars (used for the hunting pressure speed)
+	float H_wb; // Hunted wild boars
 	
 	string Disease_status;
 	// interventions
@@ -215,22 +222,21 @@ species Hx{
 	bool in_Fence;
 	
 	int Wb_i;
-	
-	
-	
+		
    	//--------------EQUATIONS--------------//
    	// Equation for pig herds
 	 equation SIR_P{
 	 	diff(S_P,t) = (-local_Bp * S_P*I_P/Farms) - (u_ph*S_P);
 	 	diff(I_P,t) = (local_Bp * S_P * I_P / Farms) - (local_gamma_p*I_P) - (u_ph*I_P);
-	 	diff(R_P,t) = (local_gamma_p*I_P) - (u_ph*R_P);
-	 	diff(D_P,t) = (u_ph*R_P) + (u_ph*S_P) + (u_ph*I_P);
+	 	diff(R_P,t) = (local_gamma_p*I_P) + (u_ph*S_P) + (u_ph*I_P); // Removed ph
+//	 	diff(D_P,t) = (u_ph*R_P) + (u_ph*S_P) + (u_ph*I_P);
 	}
 	// Equation for wild boars
 	equation SIR_WB{
 	 	diff(S_wb,t) = (-Beta_wb * S_wb*I_wb/N_wb) - (u_wb*S_wb);
 	 	diff(I_wb,t) = (Beta_wb * S_wb * I_wb / N_wb) - (local_gamma_wb*I_wb) - (u_wb*I_wb);
-	 	diff(R_wb,t) = (local_gamma_wb*I_wb) - (u_wb*R_wb);
+	 	diff(R_wb,t) = (local_gamma_wb*I_wb) + (u_wb*S_wb) + (u_wb*R_wb);
+	 	diff(H_wb, t) = (u_wb*S_wb) + (u_wb*R_wb);
 	}
 	
 	//~~~~~~~ Actions:~~~~~~~~
@@ -260,8 +266,14 @@ species Hx{
 	
 	//~~~~~~~~~~~~~~~~Pig herds epidemic
 	reflex epidemic_ph when: I_P >0{
-		Disease_status <- "Epidemic";
+		if(Disease_status = "Recovering" or Disease_status = "Reinfection"){
+			Disease_status <- "Reinfection";
+			reintroduction <- reintroduction + 1;
+		} else {
+			Disease_status <- "Epidemic";
+		}
 		is_epidemic <- true;
+		disease_free_t <- 0;
 		solve SIR_P method: "Euler" step_size:h;
 		 float CV <- ((I_P - 0) / (25 - 0)) * ((255 - 0) + 0);
 //		 Color <- rgb(CV, 0, 0, 255);
@@ -274,7 +286,7 @@ species Hx{
 		 	ph_detected <- true;
 		 	local_gamma_p <- Gamma_p*AwarenessEffect; // increased awareness (Vet visits)
 
-		 	write "Detected in " + name + 'at day:' + cycle;
+//		 	write "Detected in " + name + 'at day:' + cycle;
 		 	if MovRestriction{ // Implement MOVEMENT RESTRICTIONS intervention [protection zone]
 		 		movement_restrictions <- true;
 		 		
@@ -304,6 +316,17 @@ species Hx{
 		 		u_ph <- 0.05/step;
 		 	}	
 		 }
+		 
+		 if I_P < 1 {
+		 	I_P <- 0.0;
+		 	Disease_status <- "Recovering";
+		 }
+	}
+	
+	reflex Repopulate{
+		if disease_free_t > Repopulation_t{
+			
+		}
 	}
 	
 	reflex UpdateStatus{
@@ -318,9 +341,9 @@ species Hx{
 		// Probability of wb detection
 		if flip(p_detection_wb) and !wb_detected{
 			wb_detected <- true;
-			write "WB detected in: " + name + " at " + cycle;
+//			write "WB detected in: " + name + " at " + cycle;
 			if WBZ_culling and Farms > 0{
-				u_ph <- 0.5/step;
+				u_ph <- 0.01/step;
 //				Farms <- 0.0;
 //				S_P <- 0.0;
 //				I_P <- 0.0;
@@ -342,6 +365,10 @@ species Hx{
 		 		introduction_wb <- introduction_wb + 1;
 //		 		write "Wildlife-Domestic transmission at: " + self;
 		 	}
+		 }
+		 
+		 if I_wb < 1{
+		 	I_wb <- 0.0;
 		 }	 
 		}
 	
@@ -384,7 +411,7 @@ experiment main type:gui{
 		display PH_Curve{
 			chart "SI" type: series{
 				data "Infected Pigs" value:int(Infected_P) color: rgb (231, 124, 124,255);
-				data "Recovered Pigs" value:Recovered_P color: rgb (0, 128, 0,255);
+				data "Removed Pigs" value:Removed_P color: rgb (0, 128, 0,255);
 //				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
 				data "Death Pigs" value:int(Death_P) color: rgb (200, 200, 200,255);
 			}
@@ -393,7 +420,7 @@ experiment main type:gui{
 			chart "SI" type: series{
 //				data "Susceptible WildBoars" value:Susceptible_WB color: rgb (0, 145, 90,255);
 				data "Infected WildBoars" value:Infected_WB color: rgb (145, 0, 0,255);
-//				data "Death Pigs" value:int(Infected_P) color: rgb (200, 200, 200,255);
+				data "Hunted WB" value:int(Hunted_WB) color: rgb (200, 200, 200,255);
 			}
 		}
 		
@@ -401,5 +428,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 15 until: cycle = SimLength{
+experiment Batch type:batch repeat: 5 until: cycle = SimLength{
 }
