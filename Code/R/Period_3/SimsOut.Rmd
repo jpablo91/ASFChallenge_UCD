@@ -199,13 +199,11 @@ Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
 S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
 
-p = ggarrange(S0_pigs, S0_wb) %>%
+p00 = ggarrange(S0_pigs, S0_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n",
     color = "darkred", face = "bold", size = 14))
     
-p
-# ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
-
+p00
 ```
 
 ### Scenario 01: Scenario 0 + hunting pressure
@@ -218,11 +216,11 @@ Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
 S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 
-p = ggarrange(S1_pigs, S1_wb) %>%
+p01 = ggarrange(S1_pigs, S1_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n",
     color = "darkred", face = "bold", size = 14))
     
-p
+p01
 
 # ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
 
@@ -254,7 +252,9 @@ m00 = Hx %>%
   geom_sf(aes(fill= p_reintroduction)) + 
   theme_void()
 
-m00
+p <- ggarrange(p00, m00, nrow = 2)
+
+ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
 ```
 
 ### Scenario 01: Hunting pressure
@@ -273,7 +273,9 @@ m01 = Hx %>%
   geom_sf(aes(fill= p_reintroduction)) + 
   theme_void()
 
-m01
+p <- ggarrange(p01, m01, nrow = 2)
+
+ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
 ```
 
 ### Scenario 02: Culling of pigs in protection zones
