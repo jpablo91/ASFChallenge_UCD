@@ -48,12 +48,13 @@ species Fence{
 	// Activate the fence
 	reflex BecomeActive when: cycle = 0{
 		is_active <- true;
+
 		if HuntingPressure{
 			ask Hx at_distance 1#km{
 //				if (S_wb + I_wb > (N_wb*0.1)){
 					// Use R compartment to remove the 90% goal from the population
 					local_gamma_wb <- Gamma_wb*HuntingPressureSpeed;
-					u_wb <- 0.09/step;
+					u_wb <- 0.01/step;
 					in_Fence <- true;
 //				}
 		}

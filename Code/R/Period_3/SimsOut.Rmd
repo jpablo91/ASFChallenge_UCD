@@ -8,6 +8,11 @@ output:
     highlight: zenburn
 ---
 
+NOTES:
+  - Infected wild boars never reach 0 because the removal of wild boars is only trough hunting pressure which affects equally susceptible and infected.
+  - How should we make the re population of pigs?
+
+
 Baseline:
   - Total culling in farms located < 3km of wild boar detected cases after day 90 (10 days after start of period)
 
@@ -145,8 +150,8 @@ S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
 Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
 
 # scenario 2
-S2 <- ReadSims(dir = here("Data/Period_2/Sims/S02/EC/"))
-Hx_sim02 <- ReadSims(dir = here("Data/Period_2/Sims/S02/Agents/"))
+S2 <- ReadSims(dir = here("Data/Period_3/Sims/S02/EC/"))
+Hx_sim02 <- ReadSims(dir = here("Data/Period_3/Sims/S02/Agents/"))
 
 # scenario 3
 S3 <- ReadSims(dir = here("Data/Period_2/Sims/S03/EC/"))
@@ -172,6 +177,18 @@ Hx_sim05 <- ReadSims(dir = here("Data/Period_3/Sims/S05/Agents/"))
 
 # Plot of infected domestic pigs and wild boars over time
 
+
+```{r}
+Hx_sim00 %>% count(Disease_status)
+Hx_sim00 %>% count(reintroduction)
+
+S0 %>%
+  filter(Infected_P == 0) %>%
+  group_by(Sim) %>%
+  summarise(min(cycle))
+```
+
+
 ### Scenario 0: Baseline (fencing, movement restrictions, awareness)
 
 ```{r}
@@ -187,7 +204,6 @@ p = ggarrange(S0_pigs, S0_wb) %>%
     color = "darkred", face = "bold", size = 14))
     
 p
-
 # ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
 
 ```
@@ -203,31 +219,12 @@ S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 
 p = ggarrange(S1_pigs, S1_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Movement restrictions \n",
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n",
     color = "darkred", face = "bold", size = 14))
     
 p
 
 # ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
-
-```
-
-### Scenario 02: Scenario 01 + culling of pig herds in surveillance zone
-
-```{r}
-S2 <- ReadSims(dir = here("Data/Period_3/Sims/S02/EC/"))
-Hx_sim02 <- ReadSims(dir = here("Data/Period_3/Sims/S02/Agents/"))
-
-S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2")
-S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown")
-
-p = ggarrange(S2_pigs, S2_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 02: Movement restrictions and fencing \n",
-    color = "darkred", face = "bold", size = 14))
-    
-p
-
-# ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p)
 
 ```
 
@@ -244,52 +241,39 @@ Variables from the Agents folder:\
 ### Scenario 0: Baseline
 
 ```{r}
-
+nsims = max(Hx_sim00$Sim)
 Hx_sim00_summary <- Hx_sim00 %>%
   mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>% 
   group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
+  summarise(reintroduction = sum(reintroduction)) %>%
+  mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
 
-nsims = max(Hx_sim00$Sim)
-## all the cases are current outbreaks (index_case variable), so there is an error mapping this
 m00 = Hx %>%
   left_join(Hx_sim00_summary, by = 'idhex') %>% 
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-    index_case = ifelse(is.na(cases), NA, 1)) %>% filter(idhex == 2643)
-  PlotMap
+  ggplot() +
+  geom_sf(aes(fill= p_reintroduction)) + 
+  theme_void()
 
 m00
-
-
-Hx_sim00 %>%
-  filter(cycle == 279, idhex == 2643, Sim == 1)
-  # filter(Disease_status == 'Epidemic')
-  # count(infection_source)
 ```
 
 ### Scenario 01: Hunting pressure
 
 ```{r}
-
+nsims = max(Hx_sim01$Sim)
 Hx_sim01_summary <- Hx_sim01 %>%
   mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
   group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-nsims = max(Hx_sim01$Sim)
+  summarise(reintroduction = sum(reintroduction)) %>%
+  mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
 
 m01 = Hx %>%
-  left_join(Hx_sim01_summary, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  PlotMap
+  left_join(Hx_sim01_summary, by = 'idhex') %>% 
+  ggplot() +
+  geom_sf(aes(fill= p_reintroduction)) + 
+  theme_void()
 
 m01
-
 ```
 
 ### Scenario 02: Culling of pigs in protection zones

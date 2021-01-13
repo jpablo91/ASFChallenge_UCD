@@ -5,7 +5,7 @@ Our weekly meeting time is **Fridays 12 pm**
   
   - First submission **October 8** *[Results](Documentation/Results/Period_1/Results_P1.md)*.  
   - Second Submission **November 23** *[RESULTS](Documentation/Results/Period_2/Results_P2.md).*  
-  - Third submission **January 13**.  
+  - Third submission **January 13**. *[RESULTS](Documentation/Results/Period_3/Results_P3.md).*   
   
 ## Directory structure
 	|
