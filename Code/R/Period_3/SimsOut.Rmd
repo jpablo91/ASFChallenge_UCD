@@ -29,7 +29,7 @@ options(DT.options = list(pageLength = 100,
 
 ```
 
-# Setting up the workplace
+<!-- # Setting up the workplace -->
 
 ```{r message = FALSE, warning = FALSE}
 library(dplyr)
@@ -53,6 +53,7 @@ ReadSims <- function(dir){
   f <- list.files(dir, full.names = TRUE)
   
   L <- lapply(1:length(f), function(x){
+      # print(x)
     read.csv(f[x], fileEncoding = 'UTF-8') %>%
       mutate(Sim = x)
     }) %>%
@@ -134,10 +135,10 @@ PlotMap = function(info) {
 
 ```
 
-# Read in data for various scenarios
+# Data for various scenarios
 
 ```{r}
-# # Orig hexgrid shapefile
+# Orig hexgrid shapefile
 Hx <- st_read(here("Data/Period_3/out/Hx_5000.shp"), quiet = TRUE) %>%
     mutate(idhex = as.character(idhex))
 
@@ -149,24 +150,29 @@ Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
 S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
 Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
 
-# scenario 2
-S2 <- ReadSims(dir = here("Data/Period_3/Sims/S02/EC/"))
-Hx_sim02 <- ReadSims(dir = here("Data/Period_3/Sims/S02/Agents/"))
 
-# scenario 3
-S3 <- ReadSims(dir = here("Data/Period_2/Sims/S03/EC/"))
-Hx_sim03 <- ReadSims(dir = here("Data/Period_2/Sims/S03/Agents/"))
+# Use the diagonal points to create the square
+fenceSp <- cbind(x = c(833676.4, 773676.4, 773676.4, 833676.4, 833676.4), y = c(6347189, 6347189, 6437189, 6437189, 6347189))
 
-# scenario 4
-S4 <- ReadSims(dir = here("Data/Period_2/Sims/S04/EC/"))
-Hx_sim04 <- ReadSims(dir = here("Data/Period_2/Sims/S04/Agents/"))
+# Convert to polygon
+fenceSp <- st_polygon(list(fenceSp)) %>%
+  st_geometry()
+# Set the project CRS
+st_crs(fenceSp) <- st_crs(Hx)
 
-# scenario 5
-S5 <- ReadSims(dir = here("Data/Period_3/Sims/S05/EC/"))
-Hx_sim05 <- ReadSims(dir = here("Data/Period_3/Sims/S05/Agents/"))
+fence_buffer = st_buffer(fenceSp, 5*1000)
+fence_grid = st_intersection(Hx, fence_buffer)
+
+if(FALSE) {
+ggplot() +
+  geom_sf() +
+    geom_sf(data = Hx, alpha = 0.3, col = 'green', fill = "green") +
+    geom_sf(data = fence_grid, alpha = 0.3, col = 'blue')
+}
+
 ```
 
-### Variables from the 'EC' folder:
+## Variables from the 'EC' folder:
 
 -   *cycle:* time step of the simulation.\
 -   *Infected\_P:* Number of infected pig herds.\
@@ -174,8 +180,6 @@ Hx_sim05 <- ReadSims(dir = here("Data/Period_3/Sims/S05/Agents/"))
 -   *Sim:* Iteration of the simulation.
 
 <br><br>
-
-# Plot of infected domestic pigs and wild boars over time
 
 
 ```{r}
@@ -189,9 +193,18 @@ S0 %>%
 ```
 
 
-### Scenario 0: Baseline (fencing, movement restrictions, awareness)
+<br><br>
 
-```{r}
+Variables from the Agents folder:\
+- *idhex:* Id of the hexagonal cell.\
+- *Epidemic:* Number of times that there was an epidemic on that polygon.\
+- *introduction\_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.\
+- *introduction\_wb:* Number of times the disease was transmitted from wild boars to a pig herd.
+
+
+# Scenario 0: Baseline (fencing, movement restrictions, awareness)
+
+```{r, fig.height = 12}
 # scenario 0
 S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/"))
 Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
@@ -200,15 +213,47 @@ S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
 
 p00 = ggarrange(S0_pigs, S0_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n",
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n Fencing, movement restrictions, awareness \n",
     color = "darkred", face = "bold", size = 14))
     
-p00
+nsims = max(Hx_sim00$Sim)
+Hx_sim00_summary <- Hx_sim00 %>%
+  mutate(idhex = as.character(idhex)) %>%
+  group_by(idhex) %>%
+  summarise(reintroduction = sum(reintroduction)) %>%
+  mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
+
+m00_base = Hx %>%
+  left_join(Hx_sim00_summary, by = 'idhex') %>% 
+  ggplot() +
+    geom_sf(aes(fill= p_reintroduction)) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void() +
+    theme(legend.position = "none")
+
+m00_fence = fence_grid %>%
+    left_join(Hx_sim00_summary, by = 'idhex') %>% 
+    ggplot() +
+    geom_sf(aes(fill= p_reintroduction)) +
+    scale_fill_viridis(option="magma", direction = -1) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void()
+
+m00 = ggarrange(m00_base, m00_fence) %>%
+  annotate_figure(top = text_grob("Map of infected grids within fenced region",
+    color = "darkred", face = "bold", size = 14))
+
+p00_all <- ggarrange(p00, m00, nrow = 2)
+p00_all
+
+ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p00_all)
 ```
 
-### Scenario 01: Scenario 0 + hunting pressure
+<br><br>
 
-```{r}
+# Scenario 01: Scenario 0 + hunting pressure
+	
+```{r, fig.height = 12}
 # scenario 1
 S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
 Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
@@ -217,49 +262,9 @@ S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 
 p01 = ggarrange(S1_pigs, S1_wb) %>%
-  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n",
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n Fencing, movement restrictions, awareness, hunting pressure",
     color = "darkred", face = "bold", size = 14))
     
-p01
-
-# ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p)
-
-```
-
-<br><br>
-
-# Maps of infected areas
-
-Variables from the Agents folder:\
-- *idhex:* Id of the hexagonal cell.\
-- *Epidemic:* Number of times that there was an epidemic on that polygon.\
-- *introduction\_ph:* Number of times that an infected pig was introduced to the polygon from other polygon.\
-- *introduction\_wb:* Number of times the disease was transmitted from wild boars to a pig herd.
-
-### Scenario 0: Baseline
-
-```{r}
-nsims = max(Hx_sim00$Sim)
-Hx_sim00_summary <- Hx_sim00 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  group_by(idhex) %>%
-  summarise(reintroduction = sum(reintroduction)) %>%
-  mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
-
-m00 = Hx %>%
-  left_join(Hx_sim00_summary, by = 'idhex') %>% 
-  ggplot() +
-  geom_sf(aes(fill= p_reintroduction)) + 
-  theme_void()
-
-p <- ggarrange(p00, m00, nrow = 2)
-
-ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
-```
-
-### Scenario 01: Hunting pressure
-
-```{r}
 nsims = max(Hx_sim01$Sim)
 Hx_sim01_summary <- Hx_sim01 %>%
   mutate(idhex = as.character(idhex)) %>%
@@ -267,189 +272,38 @@ Hx_sim01_summary <- Hx_sim01 %>%
   summarise(reintroduction = sum(reintroduction)) %>%
   mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
 
-m01 = Hx %>%
+m01_base = Hx %>%
   left_join(Hx_sim01_summary, by = 'idhex') %>% 
   ggplot() +
-  geom_sf(aes(fill= p_reintroduction)) + 
-  theme_void()
+    geom_sf(aes(fill= p_reintroduction)) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void() +
+    theme(legend.position = "none")
 
-p <- ggarrange(p01, m01, nrow = 2)
+m01_fence = fence_grid %>%
+    left_join(Hx_sim01_summary, by = 'idhex') %>% 
+    ggplot() +
+    geom_sf(aes(fill = p_reintroduction)) +
+    scale_fill_viridis(option="viridis", direction = -1) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void()
 
-ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p)
-```
+m01 = ggarrange(m01_base, m01_fence) %>%
+  annotate_figure(top = text_grob("Map of infected grids within fenced region",
+    color = "darkred", face = "bold", size = 14))
 
-### Scenario 02: Culling of pigs in protection zones
+p01_all <- ggarrange(p01, m01, nrow = 2)
+p01_all
 
-```{r}
-
-Hx_sim02_summary <- Hx_sim02 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-nsims = max(Hx_sim02$Sim)
-
-m02 = Hx %>%
-  left_join(Hx_sim02_summary, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-    index_case = ifelse(is.na(cases), NA, 1)) %>%
-  PlotMap
-
-m02
-
-```
-
-### Scenario 03: Culling of pigs around wild boar positive
-
-```{r}
-
-Hx_sim03_summary <- Hx_sim03 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-nsims = max(Hx_sim03$Sim)
-
-m03 = Hx %>%
-  left_join(Hx_sim03_summary, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  PlotMap
-
-m03
-
-```
-
-### Scenario 04: Increased surveillance
-
-```{r}
-
-Hx_sim04_summary <- Hx_sim04 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-nsims = max(Hx_sim04$Sim)
-
-m04 = Hx %>%
-  left_join(Hx_sim04_summary, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  PlotMap
-
-m04
-
-```
-
-### Scenario 05: Contact tracing
-
-```{r}
-
-Hx_sim05_summary <- Hx_sim05 %>%
-  mutate(idhex = as.character(idhex)) %>%
-  unfold(., "Disease_status") %>%
-  group_by(idhex) %>%
-  summarise_at(.vars = c('Epidemic', 'introduction_ph', 'introduction_wb'), .funs = sum)
-
-nsims = max(Hx_sim05$Sim)
-
-m05 = Hx %>%
-  left_join(Hx_sim05_summary, by = 'idhex') %>%
-  # filter(!is.na(Pop)) %>%
-  mutate(Epidemic = ifelse(is.na(cases), Epidemic, 0)/nsims,
-         index_case = ifelse(is.na(cases), NA, 1)) %>%
-  PlotMap
-
-m05
-```
-
-
-
-<br><br>
-
-# All scenarios together
-
-```{r}
-
-p_pigs = ggarrange(S0_pigs, S1_pigs, S2_pigs,
-  ncol = 4,
-  common.legend = TRUE,
-  labels = sprintf("Scenario 0%d", 0:3))
-p_pigs
-
-p_wb = ggarrange(S0_wb, S1_wb, S2_wb,
-  ncol = 4,
-  common.legend = TRUE,
-  labels = sprintf("Scenario 0%d", 0:3))
-p_wb
-
-m_baseline = ggarrange(m00, m01, 
-                       common.legend = T, legend = 'right',
-                       labels = sprintf('Scenario 0%d', 0:1), heights = 5)
-
-m_pigs = ggarrange(m02, m03, m04, m05,
-  ncol = 2, nrow = 2,
-  common.legend = TRUE, legend = "right",
-  labels = sprintf("Scenario 0%d", 2:5))
-
-m_pigs
-
-ggsave(file.path(out_dir, "fig_map-inf-pigsbaseline-scenarios.png"), m_baseline, height = 5)
-ggsave(file.path(out_dir, "fig_map-inf-pigs_all-scenarios.png"), m_pigs)
-
-# ggsave(file.path(out_dir, "fig_inf-pigs_all-scenarios.png"), p_pigs)
-# ggsave(file.path(out_dir, "fig_inf-wb_all-scenarios.png"), p_wb)
-
-
+ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p01_all)
 ```
 
 <br><br>
 
-# Summary plot
 
-```{r summary}
-S0_I <- S0 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 0')
+# Misc
 
-S1_I <- S1 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 1')
-
-S2_I <- S2 %>%
-  group_by(Sim) %>%
-  summarise(I_P = max(Infected_P)) %>%
-  mutate(S = 'Sc 2')
-
-ScenariosDF <- rbind(S0_I, S1_I, S2_I)
-
-all_p = ScenariosDF %>%
-  ggplot( aes(x = S, y = I_P, fill = S)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  theme_ipsum() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11),
-    axis.title.y = element_text(angle = 0)
-  ) +
-  xlab("") +
-  ylab("No. of \n Infected pig herds")
-
-all_p
-
-# ggsave(file.path(out_dir, "fig_box-plots_all-scenarios.png"), all_p)
-```
-
-```{r}
+```{r, eval = FALSE}
 # Export the raw data for submission
 # Merge all the scenarios:
 SDF <- rbind(S0, S1, S2) %>%
@@ -463,7 +317,7 @@ write.csv(SDF, "../../../Data/Period_2/Sims/submission/SDF.csv", row.names = F)
 write.csv(AgentsDF, "../../../Data/Period_2/Sims/submission/AgentsDF.csv", row.names = F)
 ```
 
-```{r}
+```{r, eval = FALSE}
 ScenariosDF %>%
   group_by(S) %>%
   summarise(median(I_P))
