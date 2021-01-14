@@ -68,6 +68,13 @@ species Fence{
 			}
 		}
 	}
+	
+	reflex End_HP when: cycle = HP_t and Scenario = 2{
+		ask Hx at_distance 1#km{
+			local_gamma_wb <- Gamma_wb;
+			u_wb <- 0.0001/step;
+		}
+	}
 	//~~~~~~~ Geometry:~~~~~~~~
 	aspect geom{
 		draw shape color: rgb(0, 0, 0, 0) border: is_active? #red:#grey;

@@ -21,7 +21,7 @@ global{
 	 * 4 =  increaased surveillance zones
 	 * 5 = contact tracing
 	 */
-	int Scenario <- 0;
+	int Scenario <- 2;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -53,6 +53,7 @@ global{
 	// Interventions
 	bool MovRestriction;
 	bool HuntingPressure;
+	int HP_t;
 //	float HuntingEffect <- 0.10;
 	float HuntingPressureSpeed <- 50.0;
 	float AwarenessEffect <- 1.5;
@@ -105,11 +106,10 @@ global{
 		// Set scenarios
 		if Scenario = 1{
 			HuntingPressure <- true;
-//			 WBZ_culling <- true;
 		} 
 		if Scenario = 2 {
 			HuntingPressure <- true;
-//			 WBZ_culling <- true;
+			HP_t <- 10;
 		}
 		if Scenario = 3{
 			HuntingPressure <- true;

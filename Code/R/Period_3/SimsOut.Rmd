@@ -254,6 +254,50 @@ ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p01_all)
 
 <br><br>
 
+# Scenario 01: Scenario 0 + hunting pressure
+	
+```{r, fig.height = 6}
+# scenario 1
+S2 <- ReadSims(dir = here("Data/Period_3/Sims/S02/EC/")) %>%
+  distinct()
+Hx_sim02 <- ReadSims(dir = here("Data/Period_3/Sims/S02/Agents/")) %>%
+  distinct()
+S2_pigs <- PlotCycles(S2, var = "Infected_P", col = "pink2")
+S2_wb <- PlotCycles(S2, var = "Infected_WB", col = "brown")
+p02 = ggarrange(S2_pigs, S2_wb) %>%
+  annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 2: Hunting Pressure \n Fencing, movement restrictions, awareness, hunting pressure",
+    color = "darkred", face = "bold", size = 54))
+    
+nsims = max(Hx_sim02$Sim)
+Hx_sim02_summary <- Hx_sim02 %>%
+  mutate(idhex = as.character(idhex), 
+         reintroduction_b = ifelse(reintroduction > 0 , 1, 0)) %>%
+  group_by(idhex) %>%
+  summarise(reintroduction = sum(reintroduction_b)) %>%
+  mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
+
+m02_base = Hx %>%
+  left_join(Hx_sim02_summary, by = 'idhex') %>% 
+  ggplot() +
+    geom_sf(aes(fill= p_reintroduction)) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void() +
+    theme(legend.position = "none")
+m02_fence = fence_grid %>%
+    left_join(Hx_sim02_summary, by = 'idhex') %>% 
+    ggplot() +
+    geom_sf(aes(fill = p_reintroduction)) +
+    scale_fill_viridis(option="viridis", direction = -1) +
+    geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
+    theme_void()
+m02 = ggarrange(m02_base, m02_fence) %>%
+  annotate_figure(top = text_grob("Map of infected grids within fenced region",
+    color = "darkred", face = "bold", size = 54))
+p02_all <- ggarrange(p02, m02, nrow = 2)
+p02_all
+ggsave(file.path(out_dir, "fig_S2_infected-animals.png"), p02_all)
+```
+
 
 # Misc
 

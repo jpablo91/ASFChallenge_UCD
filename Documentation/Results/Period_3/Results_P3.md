@@ -18,7 +18,7 @@ We use a mechanistic stochastic agent based model. We aggregate the population c
 The two populations interact based on the characteristics of the farms and the density of animals within a hexagonal cell.\
 For the long-distance disease spread dynamics we use the land characteristics and estimated wild boar population density to represent the transmission between contiguous cells, and the movement patterns to represent the transmission between longer distances. This modeling approach allows us to account for the spatial heterogeneity in the transmission dynamics with the assumption that the population characteristics within each hexagonal cell are homogeneous.
 
-On this period, we assume that the fencing and hunting pressure are successful stopping the disease transmission outside the fence. In our model the disease spread is mostly happening inside the fence. For the initial conditions, we use the recently reported cases, and we decided to focus on exploring the events of reintroduction of the disease into areas that are recovering and have been repopulated.
+On this period, we assume that the fencing and hunting pressure are successful at stopping the disease transmission outside the fence. In our model the disease spread is mostly happening inside the fence. For the initial conditions, we use the recently reported cases, and we decided to focus on exploring the events of reintroduction of the disease into areas that are recovering and have been repopulated.
 
 The hexagonal cells can be either disease free, infected, recovered or reintroduced. Once the culling of the farms has been carried on and the population reaches 0, the farm transitions into a recovering phase where it has to be 60 days disease free before being repopulated. If a farm that has been repopulated gets infected again, we consider this as a reintroduction.
 
@@ -51,11 +51,11 @@ The following plots show the number of infected farms and wild boars estimated b
 
 ### Conclusion
 
-Our model suggests that the hunting pressure is necessary to control the disease and avoid getting reintroduction into areas that are recovering and where the re population of pig herds is happening. Its important to notice that we assume that the wild boar population remains stable, and since there is no active surveillance the disease is maintained when there is no hunting pressure and therefore representing a constant infection source for the pig herds.
+Our model suggests that the hunting pressure is necessary to control the disease and avoid getting reintroduction into areas that are recovering and where the re population of pig herds is happening. Its important to notice that we assume that the wild boar population remains stable and our model doesn't accounts for any seasonality. Since there is no active surveillance the disease is maintained when there is no hunting pressure and therefore representing a constant infection source for the pig herds.
 
 
 
-# Apendix: DataDoc
+# Appendix: DataDoc
 
 We provide 2 raw data files:
 
