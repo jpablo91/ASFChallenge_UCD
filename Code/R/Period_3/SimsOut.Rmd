@@ -17,10 +17,10 @@ Baseline:
   - Total culling in farms located < 3km of wild boar detected cases after day 90 (10 days after start of period)
 
 ```{r global_options, include = FALSE}
-knitr::opts_chunk$set(fig.width=12,
-                      fig.height=8,
+knitr::opts_chunk$set(fig.width=7,
+                      fig.height=5,
                       echo=FALSE, warning=FALSE, message=FALSE)
-options(DT.options = list(pageLength = 100,
+options(DT.options = list(pageLength = 60,
                           dom = 'Bft',
                           filter = "top",
                           buttons = c('copy', 'csv')))
@@ -163,7 +163,7 @@ Variables from the Agents folder:\
 
 # Scenario 0: Baseline (fencing, movement restrictions, awareness)
 
-```{r,fig.height = 8}
+```{r,fig.height = 6}
 # scenario 0
 S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/")) %>%
   distinct()
@@ -173,7 +173,7 @@ S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
 S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown", y_lim = c(0, 1100))
 p00 = ggarrange(S0_pigs, S0_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n Fencing, movement restrictions, awareness \n",
-    color = "darkred", face = "bold", size = 14))
+    color = "darkred", face = "bold", size = 54))
     
 nsims = max(Hx_sim00$Sim)
 Hx_sim00_summary <- Hx_sim00 %>%
@@ -199,8 +199,8 @@ m00_fence = fence_grid %>%
     theme_void()
 m00 = ggarrange(m00_base, m00_fence) %>%
   annotate_figure(top = text_grob("Map of infected grids within fenced region",
-    color = "darkred", face = "bold", size = 14))
-p00_all <- ggarrange(p00, m00, nrow = 2, heights = c(6,6))
+    color = "darkred", face = "bold", size = 54))
+p00_all <- ggarrange(p00, m00, nrow = 2)
 p00_all
 ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p00_all)
 ```
@@ -210,7 +210,7 @@ ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p00_all)
 
 # Scenario 01: Scenario 0 + hunting pressure
 	
-```{r, fig.height = 8}
+```{r, fig.height = 6}
 # scenario 1
 S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/")) %>%
   distinct()
@@ -220,7 +220,7 @@ S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
 p01 = ggarrange(S1_pigs, S1_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n Fencing, movement restrictions, awareness, hunting pressure",
-    color = "darkred", face = "bold", size = 14))
+    color = "darkred", face = "bold", size = 54))
     
 nsims = max(Hx_sim01$Sim)
 Hx_sim01_summary <- Hx_sim01 %>%
@@ -246,8 +246,8 @@ m01_fence = fence_grid %>%
     theme_void()
 m01 = ggarrange(m01_base, m01_fence) %>%
   annotate_figure(top = text_grob("Map of infected grids within fenced region",
-    color = "darkred", face = "bold", size = 14))
-p01_all <- ggarrange(p01, m01, nrow = 2, heights = c(6,6))
+    color = "darkred", face = "bold", size = 54))
+p01_all <- ggarrange(p01, m01, nrow = 2)
 p01_all
 ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p01_all)
 ```
