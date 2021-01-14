@@ -42,14 +42,6 @@ The following plots show the number of infected farms and wild boars estimated b
 ![](fig_S1_infected-animals.png)
 
 
-#### Reduction of number reintroductions.
-
-|Scenario | Probability of reintroduction | Time to eradication|
-|---------|-------------------------------|--------------------|
-|S00      |                               |                    |
-S01|      |                               |                    |
-
-
 ### Conclusion
 
 Our model suggests that the hunting pressure is necessary to control the disease and avoid getting reintroduction into areas that are recovering and where the re population of pig herds is happening. 

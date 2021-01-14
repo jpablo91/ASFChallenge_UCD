@@ -17,16 +17,13 @@ Baseline:
   - Total culling in farms located < 3km of wild boar detected cases after day 90 (10 days after start of period)
 
 ```{r global_options, include = FALSE}
-
 knitr::opts_chunk$set(fig.width=12,
                       fig.height=8,
                       echo=FALSE, warning=FALSE, message=FALSE)
-
 options(DT.options = list(pageLength = 100,
                           dom = 'Bft',
                           filter = "top",
                           buttons = c('copy', 'csv')))
-
 ```
 
 <!-- # Setting up the workplace -->
@@ -39,14 +36,11 @@ library(sf)
 library(here)
 library(hrbrthemes)
 library(viridis)
-
 out_dir = here("Documentation/Results/Period_3")
 if(!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-
 # ==============================================================================
 # FUNCTIONS
 # ==============================================================================
-
 # Read Simulations
 # ------------------------------------------------------------------------------
 ReadSims <- function(dir){
@@ -59,14 +53,10 @@ ReadSims <- function(dir){
     }) %>%
     do.call(rbind, .)
 }
-
-
 # Functions for getting quantiles
 # ------------------------------------------------------------------------------
 Q25 <- function(sims) quantile(sims, 0.25)
 Q75 <- function(sims) quantile(sims, 0.75)
-
-
 # Function for summarizing the cycles
 # ------------------------------------------------------------------------------
 CycleSums <- function(sims){
@@ -75,13 +65,10 @@ CycleSums <- function(sims){
     group_by(cycle) %>%
     summarise_all(.funs = c(Median = median, Q25 = Q25, Q75 = Q75))
 }
-
-
 # Function for the plots
 # ------------------------------------------------------------------------------
 PlotCycles <- function(sims, var, col, y_lim){
   y_lab = ifelse(grepl("_P", var), "Infected \n pig herds", "Infected \n wild boar")
-
   p = sims %>%
     CycleSums() %>%
     ggplot(aes(x = cycle)) +
@@ -96,28 +83,21 @@ PlotCycles <- function(sims, var, col, y_lim){
     xlab("Days") +
     theme(legend.position = "none",
       axis.title.y = element_text(angle = 0, vjust = 0.5))
-
   if( !missing(y_lim) ) p = p + ylim(y_lim)
-
   p
   
 }
-
-
 # Function to convert from long to wide
 # ------------------------------------------------------------------------------
 ## Variable to spread categorical variables
 unfold <- function(Dat, Var){
   Dat %>% mutate(N=1) %>% tidyr::spread(eval(parse(text = Var)), N, fill = 0)
 }
-
-
 # Function to make map
 # ------------------------------------------------------------------------------
 PlotMap = function(info) {
   info =   info %>%
     mutate(Epidemic = ifelse(Epidemic == 0, NA, Epidemic))
-
   ggplot(info) +
     geom_sf(aes(fill = Epidemic), color = "white", lwd = 0.1) +
     geom_sf(data = st_centroid(subset(Hx, ph_cases > 0)),
@@ -130,9 +110,7 @@ PlotMap = function(info) {
       low = "darkblue",
       limits=c(0, 0.5),
       na.value = "snow3")
-
 }
-
 ```
 
 # Data for various scenarios
@@ -141,35 +119,27 @@ PlotMap = function(info) {
 # Orig hexgrid shapefile
 Hx <- st_read(here("Data/Period_3/out/Hx_5000.shp"), quiet = TRUE) %>%
     mutate(idhex = as.character(idhex))
-
 # scenario 0
 S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/"))
 Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
-
 # scenario 1
 S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
 Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
-
-
 # Use the diagonal points to create the square
 fenceSp <- cbind(x = c(833676.4, 773676.4, 773676.4, 833676.4, 833676.4), y = c(6347189, 6347189, 6437189, 6437189, 6347189))
-
 # Convert to polygon
 fenceSp <- st_polygon(list(fenceSp)) %>%
   st_geometry()
 # Set the project CRS
 st_crs(fenceSp) <- st_crs(Hx)
-
 fence_buffer = st_buffer(fenceSp, 5*1000)
 fence_grid = st_intersection(Hx, fence_buffer)
-
 if(FALSE) {
 ggplot() +
   geom_sf() +
     geom_sf(data = Hx, alpha = 0.3, col = 'green', fill = "green") +
     geom_sf(data = fence_grid, alpha = 0.3, col = 'blue')
 }
-
 ```
 
 ## Variables from the 'EC' folder:
@@ -180,17 +150,6 @@ ggplot() +
 -   *Sim:* Iteration of the simulation.
 
 <br><br>
-
-
-```{r}
-Hx_sim00 %>% count(Disease_status)
-Hx_sim00 %>% count(reintroduction)
-
-S0 %>%
-  filter(Infected_P == 0) %>%
-  group_by(Sim) %>%
-  summarise(min(cycle))
-```
 
 
 <br><br>
@@ -204,23 +163,24 @@ Variables from the Agents folder:\
 
 # Scenario 0: Baseline (fencing, movement restrictions, awareness)
 
-```{r, fig.height = 12}
+```{r,fig.height = 8}
 # scenario 0
-S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/"))
-Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/"))
-
+S0 <- ReadSims(dir = here("Data/Period_3/Sims/S00/EC/")) %>%
+  distinct()
+Hx_sim00 <- ReadSims(dir = here("Data/Period_3/Sims/S00/Agents/")) %>%
+  distinct()
 S0_pigs <- PlotCycles(S0, var = "Infected_P", col = "pink2")
-S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown")
-
+S0_wb <- PlotCycles(S0, var = "Infected_WB", col = "brown", y_lim = c(0, 1100))
 p00 = ggarrange(S0_pigs, S0_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 0: Baseline \n Fencing, movement restrictions, awareness \n",
     color = "darkred", face = "bold", size = 14))
     
 nsims = max(Hx_sim00$Sim)
 Hx_sim00_summary <- Hx_sim00 %>%
-  mutate(idhex = as.character(idhex)) %>%
+  mutate(idhex = as.character(idhex), 
+         reintroduction_b = ifelse(reintroduction > 0 , 1, 0)) %>%
   group_by(idhex) %>%
-  summarise(reintroduction = sum(reintroduction)) %>%
+  summarise(reintroduction = sum(reintroduction_b)) %>%
   mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
 
 m00_base = Hx %>%
@@ -230,7 +190,6 @@ m00_base = Hx %>%
     geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
     theme_void() +
     theme(legend.position = "none")
-
 m00_fence = fence_grid %>%
     left_join(Hx_sim00_summary, by = 'idhex') %>% 
     ggplot() +
@@ -238,38 +197,37 @@ m00_fence = fence_grid %>%
     scale_fill_viridis(option="magma", direction = -1) +
     geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
     theme_void()
-
 m00 = ggarrange(m00_base, m00_fence) %>%
   annotate_figure(top = text_grob("Map of infected grids within fenced region",
     color = "darkred", face = "bold", size = 14))
-
-p00_all <- ggarrange(p00, m00, nrow = 2)
+p00_all <- ggarrange(p00, m00, nrow = 2, heights = c(6,6))
 p00_all
-
 ggsave(file.path(out_dir, "fig_S0_infected-animals.png"), p00_all)
 ```
+
 
 <br><br>
 
 # Scenario 01: Scenario 0 + hunting pressure
 	
-```{r, fig.height = 12}
+```{r, fig.height = 8}
 # scenario 1
-S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/"))
-Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/"))
-
+S1 <- ReadSims(dir = here("Data/Period_3/Sims/S01/EC/")) %>%
+  distinct()
+Hx_sim01 <- ReadSims(dir = here("Data/Period_3/Sims/S01/Agents/")) %>%
+  distinct()
 S1_pigs <- PlotCycles(S1, var = "Infected_P", col = "pink2")
 S1_wb <- PlotCycles(S1, var = "Infected_WB", col = "brown")
-
 p01 = ggarrange(S1_pigs, S1_wb) %>%
   annotate_figure(top = text_grob("No. of infected animals over time\n Scenario 1: Hunting Pressure \n Fencing, movement restrictions, awareness, hunting pressure",
     color = "darkred", face = "bold", size = 14))
     
 nsims = max(Hx_sim01$Sim)
 Hx_sim01_summary <- Hx_sim01 %>%
-  mutate(idhex = as.character(idhex)) %>%
+  mutate(idhex = as.character(idhex), 
+         reintroduction_b = ifelse(reintroduction > 0 , 1, 0)) %>%
   group_by(idhex) %>%
-  summarise(reintroduction = sum(reintroduction)) %>%
+  summarise(reintroduction = sum(reintroduction_b)) %>%
   mutate(p_reintroduction = reintroduction/nsims) %>% ungroup()
 
 m01_base = Hx %>%
@@ -279,7 +237,6 @@ m01_base = Hx %>%
     geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
     theme_void() +
     theme(legend.position = "none")
-
 m01_fence = fence_grid %>%
     left_join(Hx_sim01_summary, by = 'idhex') %>% 
     ggplot() +
@@ -287,14 +244,11 @@ m01_fence = fence_grid %>%
     scale_fill_viridis(option="viridis", direction = -1) +
     geom_sf(data = fenceSp, alpha = 0.3, col = 'blue', fill = NA) +
     theme_void()
-
 m01 = ggarrange(m01_base, m01_fence) %>%
   annotate_figure(top = text_grob("Map of infected grids within fenced region",
     color = "darkred", face = "bold", size = 14))
-
-p01_all <- ggarrange(p01, m01, nrow = 2)
+p01_all <- ggarrange(p01, m01, nrow = 2, heights = c(6,6))
 p01_all
-
 ggsave(file.path(out_dir, "fig_S1_infected-animals.png"), p01_all)
 ```
 
@@ -312,7 +266,6 @@ SDF <- rbind(S0, S1, S2) %>%
 N_Agents <- 6993
 AgentsDF <- rbind(Hx_sim00_summary, Hx_sim01_summary, Hx_sim02_summary) %>%
   mutate(Scenario = c(rep("00", N_Agents), rep("01", N_Agents), rep('02', N_Agents)))
-
 write.csv(SDF, "../../../Data/Period_2/Sims/submission/SDF.csv", row.names = F)
 write.csv(AgentsDF, "../../../Data/Period_2/Sims/submission/AgentsDF.csv", row.names = F)
 ```
@@ -321,7 +274,6 @@ write.csv(AgentsDF, "../../../Data/Period_2/Sims/submission/AgentsDF.csv", row.n
 ScenariosDF %>%
   group_by(S) %>%
   summarise(median(I_P))
-
 ## How much does the median decreases depending on the scenarios:
 ##### Scenario 0
 ### Scenario 0 vs 1:
@@ -334,7 +286,6 @@ ScenariosDF %>%
 (38.97296 - 30.46799) / 38.97296
 ### Scenario 0 vs 5:
 (38.97296 - 36.13017) / 38.97296
-
 ####### Scenario 01
 ### Scenario 1 vs 2:
 (36.99261 - 29.94144) / 36.99261
@@ -344,4 +295,3 @@ ScenariosDF %>%
 (36.99261 - 30.46799) / 36.99261
 ### Scenario 1 vs 5:
 (36.99261 - 36.13017) / 36.99261
-```

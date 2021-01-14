@@ -21,7 +21,7 @@ global{
 	 * 4 =  increaased surveillance zones
 	 * 5 = contact tracing
 	 */
-	int Scenario <- 1;
+	int Scenario <- 0;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -426,5 +426,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 2 until: cycle = SimLength{
+experiment Batch type:batch repeat: 20 until: cycle = SimLength{
 }
