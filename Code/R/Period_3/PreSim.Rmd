@@ -122,7 +122,6 @@ herdsHx <- herdsSp %>%
 
 Hx <- BHx %>%
   left_join(herdsHx)
-Hx 
 ```
 
 ## Movements
@@ -455,6 +454,7 @@ if(FALSE){
     summarise(tests = sum(Test), wb_tests = sum(wild.boar)) 
 }
 
+
 HxDF <- Hx %>%
   filter(!is.na(Pop)) %>%
   data.frame()
@@ -516,17 +516,23 @@ Variables:
 
 ```{r Export the data}
 # Export data:
-Hx %>%
+Hxe <- Hx %>%
   filter(!is.na(Pop) | !is.na(E_WB)) %>% # Select only the cells with a WB or PH population
-  mutate(Farms = ifelse(is.na(Farms), 0.0001, Farms), # If there is no PH pop, set a very small number for the model
+  mutate(Farms = ifelse(is.na(Farms), 1e-6, Farms), # If there is no PH pop, set a very small number for the model
     density_s = scales::rescale(x = density, to = c(0.2,0.6)), # Score based on the density
-     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forest cover and EB density
-           scales::rescale(x = WBd, to = c(0,.5)), # score based on the forst cover and EB density
-          outdoor = ifelse(is.na(is_otdr  ), 0, is_otdr  ),
+     WB_score = scales::rescale(x = Forest, to = c(0,.5)) + # score based on the forest cover and EWb density
+           scales::rescale(x = WBd, to = c(0,.5)), # score based on the forest cover and EWb density
+          outdoor = ifelse(is.na(is_otdr), 0, is_otdr),
     outdoor = scales::rescale(outdoor, c(0.01, 0.5)),
-    WBd = scales::rescale(WBd, to = c(0.05, 0.25)),) %>%
+    WBd = scales::rescale(WBd, to = c(0.05, 0.25)),) 
+
+Hxe %>% dplyr::select(idhex, is_otdr, outdoor) %>%
+  data.frame() %>%
+  arrange(desc(is_otdr))
+
   write_sf(here(paste0("Data/Period_3/out/Test/Hx_", HxRes, ".shp")))
 ```
+
 
 ```{r}
 Hx %>%

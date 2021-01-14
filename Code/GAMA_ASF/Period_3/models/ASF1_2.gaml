@@ -21,7 +21,7 @@ global{
 	 * 4 =  increaased surveillance zones
 	 * 5 = contact tracing
 	 */
-	int Scenario <- 0;
+	int Scenario <- 1;
 	// Load files:
 	file Hx_shp <- file("../includes/out/Hx_5000.shp");
 	file Fence_shp <- file("../includes/out/fenceSp.shp");
@@ -48,7 +48,7 @@ global{
 	float Beta_wb <- 0.001/step; // Transmission rate for wild boars
 	float Gamma_wb <- 0.001/step; 
 	float Transmission_d;
-	float AdjSpreadWB_p <- 0.3; // probability of adjacent spread via WB
+	float AdjSpreadWB_p <- 0.1; // probability of adjacent spread via WB
 	
 	// Interventions
 	bool MovRestriction;
@@ -126,7 +126,7 @@ global{
 		}
 	}
 	
-	reflex ph_culling_on when: cycle = 10{
+	reflex ph_culling_on when: cycle = 0{
 		PZ_culling <- true; //Switch to wildboar culling !!!!!!!!!!!!!!!!!!!!!!!!
 	}
 	
@@ -162,6 +162,7 @@ species Hx{
 	Hx_I Hx_i;
 	//~~~~~~ Population Parameters: ~~~~~~
 	float Farms;
+	float initFarms <- Farms;
 	float Mov;
 	int out;
 	int in;
@@ -229,14 +230,12 @@ species Hx{
 	 	diff(S_P,t) = (-local_Bp * S_P*I_P/Farms) - (u_ph*S_P);
 	 	diff(I_P,t) = (local_Bp * S_P * I_P / Farms) - (local_gamma_p*I_P) - (u_ph*I_P);
 	 	diff(R_P,t) = (local_gamma_p*I_P) + (u_ph*S_P) + (u_ph*I_P); // Removed ph
-//	 	diff(D_P,t) = (u_ph*R_P) + (u_ph*S_P) + (u_ph*I_P);
 	}
 	// Equation for wild boars
 	equation SIR_WB{
 	 	diff(S_wb,t) = (-Beta_wb * S_wb*I_wb/N_wb) - (u_wb*S_wb);
 	 	diff(I_wb,t) = (Beta_wb * S_wb * I_wb / N_wb) - (local_gamma_wb*I_wb) - (u_wb*I_wb);
 	 	diff(R_wb,t) = (local_gamma_wb*I_wb) + (u_wb*S_wb) + (u_wb*R_wb);
-	 	diff(H_wb, t) = (u_wb*S_wb) + (u_wb*R_wb);
 	}
 	
 	//~~~~~~~ Actions:~~~~~~~~
@@ -321,11 +320,10 @@ species Hx{
 		 	I_P <- 0.0;
 		 	Disease_status <- "Recovering";
 		 }
-	}
-	
+	}	
 	reflex Repopulate{
-		if disease_free_t > Repopulation_t{
-			
+		if disease_free_t = Repopulation_t{
+			Farms <- initFarms;
 		}
 	}
 	
@@ -358,7 +356,7 @@ species Hx{
 		 // Probability of Wildlife-domestic transmission
 		 float InfectedWB_p <- I_wb/N_wb; //
 		
-		 if flip(WB_Dp){ // Probability of wildlife-domestic contact
+		 if flip(WB_Dp) and Pop > 0{ // Probability of wildlife-domestic contact
 		 	Wb_i <- int(rnd(1, N_wb));	// pick a random number that represent the index of a animal
 		 	if(Wb_i < I_wb){ // If the index of the animal is > than the number of infeted the disease will be transmitted
 		 		I_P <- I_P + 1;
@@ -428,5 +426,5 @@ experiment main type:gui{
 }
 
 
-experiment Batch type:batch repeat: 5 until: cycle = SimLength{
+experiment Batch type:batch repeat: 2 until: cycle = SimLength{
 }

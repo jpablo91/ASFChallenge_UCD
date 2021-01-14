@@ -6,14 +6,22 @@
 -   Nistara Randawa.
 -   Jerome Baron
 
-## Model description
+### Model updates since last submission
+  
+  - Improved the dynamics of depopulation and farms recovering from the infection.
+  - Extended the modeling period to forecast 260 days.  
+  - Reparametrized the model to reflect the current disease spread.
 
 ### Model description.
 
 We use a mechanistic stochastic agent based model. We aggregate the population characteristics in a 5 km diameter hexagonal grid and we use these characteristics to describe the local and long-distance disease spread dynamics. The local disease spread is represented by the disease transmission within each hexagonal cell, where each cell has its own SIR model for both the estimated wild boar population and the pig herds. The two populations interact based on the characteristics of the farms and the density of animals within a hexagonal cell.\
 For the long-distance disease spread dynamics we use the land characteristics and estimated wild boar population density to represent the transmission between contiguous cells, and the movement patterns to represent the transmission between longer distances. This modeling approach allows us to account for the spatial heterogeneity in the transmission dynamics with the assumption that the population characteristics within each hexagonal cell are homogeneous.
 
-### Scenario Modeling.
+We assume that the fencing and hunting pressure are successful stopping the disease transmission outside the fence. In our model the disease spread is mostly happening inside the fence. For the initial conditions, we use the recently reported cases, and we decided to focus on exploring the events of reintroduction of the disease into areas that are recovering and have been repopulated.
+
+The hexagonal cells can be either disease free, infected, recovered or reintroduced. Once the culling of the farms has been carried on and the population reaches 0, the farm transitions into a recovering phase where it has to be 60 days disease free before being repopulated. If a farm that has been repopulated gets infected again, we consider this as a reintroduction.
+
+#### Scenario Modeling.
 
 We compare the effect of hunting pressure in two scenarios where:
   
@@ -23,7 +31,7 @@ We compare the effect of hunting pressure in two scenarios where:
 
 ## Model Results:
 
-### Number and location of the predicted outbreaks for the next time period.
+The following plots show the number of infected farms and wild boars estimated by our model and the probability of reintroduction of the disease after eradication for the two scenarios we defined.  
 
 ### Baseline scenario
 
@@ -36,8 +44,16 @@ We compare the effect of hunting pressure in two scenarios where:
 
 #### Reduction of number reintroductions.
 
+|Scenario | Probability of reintroduction | Time to eradication|
+|---------|-------------------------------|--------------------|
+|S00      |                               |                    |
+S01|      |                               |                    |
+
 
 ### Conclusion
+
+Our model suggests that the hunting pressure is necessary to control the disease and avoid getting reintroduction into areas that are recovering and where the re population of pig herds is happening. 
+
 
 
 # Apendix: DataDoc
