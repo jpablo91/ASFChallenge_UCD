@@ -47,6 +47,7 @@ The following plots show the number of infected farms and wild boars estimated b
 Our model suggests that the hunting pressure is necessary to control the disease and avoid getting reintroduction into areas that are recovering and where the re population of pig herds is happening. Its important to notice that we assume that the wild boar population remains stable, and since there is no active surveillance the disease is maintained when there is no hunting pressure and therefore representing a constant infection source for the pig herds.
 
 
+
 # Apendix: DataDoc
 
 We provide 2 raw data files:
