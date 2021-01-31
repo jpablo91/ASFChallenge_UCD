@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Model results for second period (Jan 13, 2021)
 
 ### Team:
@@ -65,12 +70,13 @@ We provide 2 raw data files:
     -   Infected\_P: The number of infected pig herds.\
     -   Infected\_WB: The number of infected wild boars.\
     -   Sim: Iteration of the scenario.\
-    -   Scenario: The corresponding scenario for that run.
+    -   Scenario: The corresponding scenario for that run.  
 
 -   **AgentsDF.csv**: Contains all the agents for the 6 scenarios ran, each agent (row) is a hexagonal grid cell with the variables:
 
     -   idhex: a id given to the hexagonal cell.\
-    -   Epidemic: Indicates the number of times that cell had a epidemic in the model ran.\
+    -   Epidemic: Indicates the number of times that cell had a epidemic in the model ran.\  
+    -   Reintroduction: indicates if the disease has beenreintroduced since the eradication.  
     -   introduction\_ph: Number of times the disease transmission source was a long distance movement.\
     -   introduction\_wb: Number of times the transmission source of the pig herds was from the wild boars.\
     -   Scenario: The corresponding scenario for that agent.
