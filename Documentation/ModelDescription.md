@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Model Description
 
 Our model can be described as a metapopulation-agent based model, where the agents are represented by cells in a hexagonal grid aggregating a population with specific characteristics such as: density, land cover, probability and direction of movements, among others. These characteristics make the agents to vary in some of the disease spread parameters allowing to account for the heterogeneity of the disease spread among a bigger population.\
@@ -11,7 +16,6 @@ A lot of these parameters are very specific to our model approach, *i.e. the loc
 | Parameter                                          | Current value | source | Notes                                                         |
 +:===================================================+:==============+:=======+:==============================================================+
 | $\beta_{ph}$ Base between herd transmission rate   | (0.1, 0.6)    | None   | Scaled by the population density                              |
-<<<<<<< HEAD
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 | $\beta_{wb}$ Base wild boars transmission rate     | 0.01          | None   | Scaled by landscape characteristics                           |
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
@@ -31,7 +35,7 @@ A lot of these parameters are very specific to our model approach, *i.e. the loc
 | $\delta$ Probability of domestic-wild boars spread | 0.01-0.5      | None   | Scaled by the number of outdoor farms                         |
 +----------------------------------------------------+---------------+--------+---------------------------------------------------------------+
 
-![](Figures/Model.png){width="599"}
+![](Figures/Model.png){width="200"}
 
 ## Scenarios
 
