@@ -58,11 +58,11 @@ $$\frac{\delta R_{i}}{\delta t} = \gamma_{i} I_{i} - \mu R_{i}$$
   - *For the first period I don’t see how you can conclude on the effect of fencing alone (and with the addition of hunting pressure) considering that the barrier is only added in your third scenario (in addition with hunting). Are fencing and hunting inverted in the sentence ?*  
   **Yes you are right we inverted the interventions in the sentence, thanks for noticing that**  
   - *Have you dissociated the 2 measures ? And so, would you be able to conclude on the effect of fencing alone, increased hunting alone and the effect of both ?*  
-  **We defined scenarios where there is only hunting pressure and hunting pressure + fencing, we could also do scenarios where there is fencing alone but didn't did it for the submissions.**  
+  **We defined scenarios where there is only hunting pressure and hunting pressure + fencing, we could also do scenarios where there is fencing alone but didn't do it for the submissions.**  
   - *When you have decided to change your spatial resolution from 15 km to 5km : was it because of the new questions we have asked you, or was it a change you were willing to make by your own ?*  
-  **We changed the resolution to implement easier the interventions added (instead of defining areas at 3 km radius we assume it's 5 km) **  
+  **We changed the resolution to implement more easiliy the new added interventions (instead of defining areas at 3 km radius we assume it's 5 km) **  
   - *In the second period you have added rates for mortality. Is it to say that culling of pig herds and hunting were not taken into account in the first period ?*  
-  **Culling was taking into account but the culled animals were pooled into the R compartment**  
+  **Culling was taken into account but the culled animals were pooled into the R compartment**  
   - *In the second and third periods, when you say in scenario 00 that there is no hunting pressure : have you still modeled a « classic » hunting season with 50 % of wild boars killed at the end of the season and 20 % of them tested, or not at all ?*  
   **No, we did not really considered the hunting season at all**  
   - *For this second period, when you add an increased hunting pressure: is it inside the fence and the 15km buffer zone ? What is the percentage of wild boar killed and how many of them are tested?*  
