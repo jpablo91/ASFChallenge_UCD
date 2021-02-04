@@ -76,7 +76,7 @@ $$\frac{\delta R_{i}}{\delta t} = \gamma_{i} I_{i} - \mu R_{i}$$
     - *On day 170 it is the end of the hunting season?*  
     **We did not considered the hunting season at all**  
   - *Why have you chosen to wait for 60 days before repopulation of culled farms? During the kick of meeting we talked about a duration of 50 days but maybe we were unclear in further communication.*  
-  **Sorry, our team member that attended this meeting left the challenge and we did not knew about this.**  
+  **Sorry, our team member that attended this meeting left the challenge and we did not know about this.**  
   - *When you implement a fence, is it always 100 % efficient?*  
   **No the fence only reduces the rate at which an infected boar can move between grids in a  but not reduces it to 0**  
   
